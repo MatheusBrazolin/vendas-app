@@ -72,9 +72,15 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
     inputRef.current?.focus()
   }
 
-  // Scanner workflow: USB readers type the code + Enter.
-  // On Enter, we try an EXACT code match and auto-add ONE unit to the cart.
-  async function handleScanLookup(code: string) {
+  /**
+   * Scanner workflow: USB readers type the code + Enter.
+   * On Enter we try an EXACT code match and auto-add ONE unit to the cart.
+   *
+   * Only called when the input looks like a numeric barcode — searching by
+   * name does NOT route through here, so the user never sees a misleading
+   * "produto não encontrado" toast when typing a product name.
+   */
+  async function handleBarcodeLookup(code: string) {
     const trimmed = code.trim()
     if (!trimmed) return
 
@@ -94,7 +100,7 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
     }
 
     if (!data) {
-      toast.error(`Produto não encontrado: ${trimmed}`)
+      toast.error(`Código não encontrado: ${trimmed}`)
       inputRef.current?.select()
       return
     }
@@ -108,10 +114,28 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
     handleAdd(data, 1)
   }
 
+  /** A pure-digit string of 4+ chars is treated as a barcode/SKU. */
+  function looksNumeric(value: string): boolean {
+    return /^\d{4,}$/.test(value.trim())
+  }
+
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      void handleScanLookup(e.currentTarget.value)
+    if (e.key !== 'Enter') return
+    e.preventDefault()
+    const value = e.currentTarget.value.trim()
+    if (!value) return
+
+    // Barcode-shaped input: scanner flow → exact match + auto-add 1
+    if (looksNumeric(value)) {
+      void handleBarcodeLookup(value)
+      return
+    }
+
+    // Name-shaped input: if the dropdown narrowed to a single product, add it.
+    // Otherwise just let the user pick from the list — never show "not found".
+    if (results.length === 1) {
+      const product = results[0]
+      handleAdd(product, getQuantity(product))
     }
   }
 
@@ -124,7 +148,7 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Aponte o leitor ou digite o nome / código..."
+          placeholder="Bipe o código de barras OU digite o nome do produto..."
           className="pl-9 pr-10 h-11 text-sm"
           autoComplete="off"
           spellCheck={false}
@@ -133,14 +157,16 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
         <ScanBarcode className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
       </div>
 
-      <p className="text-[11px] text-slate-400 px-1">
-        Pressione{' '}
-        <kbd className="px-1 py-0.5 border border-slate-200 rounded text-[10px] bg-slate-50">
-          Enter
-        </kbd>{' '}
-        para adicionar pelo código exato (scanner = 1 unidade) ou ajuste a quantidade abaixo
-        antes de clicar em <strong>Adicionar</strong>.
-      </p>
+      <div className="px-1 space-y-1 text-[11px] text-slate-400">
+        <p>
+          <ScanBarcode className="inline h-3 w-3 mr-1 -mt-0.5 text-slate-400" />
+          <strong className="text-slate-600">Com código:</strong> bipe o leitor — adiciona 1 unidade no carrinho.
+        </p>
+        <p>
+          <Search className="inline h-3 w-3 mr-1 -mt-0.5 text-slate-400" />
+          <strong className="text-slate-600">Sem código:</strong> digite o nome, ajuste a quantidade e clique em <strong>Adicionar</strong>.
+        </p>
+      </div>
 
       {(loading || scanning) && (
         <p className="text-xs text-slate-400 px-1">
