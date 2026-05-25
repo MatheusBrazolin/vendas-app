@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Plus, ShoppingCart } from 'lucide-react'
+import { Plus, Printer, ShoppingCart, Wallet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
@@ -10,7 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { getSales } from '@/lib/queries/sales'
+import { Pagination } from '@/components/ui/pagination'
+import { getSalesPaged } from '@/lib/queries/sales'
 import { formatCurrency, formatDate, PAYMENT_LABELS } from '@/lib/utils/format'
 import type { PaymentMethod } from '@/types/database'
 
@@ -47,8 +48,49 @@ function PaymentBadge({ method }: { method: PaymentMethod }) {
   )
 }
 
-export default async function VendasPage() {
-  const sales = await getSales(100)
+function parsePayment(value: string | undefined): PaymentMethod | undefined {
+  if (value === 'cash' || value === 'pix' || value === 'credit' || value === 'debit') {
+    return value
+  }
+  return undefined
+}
+
+function isIsoDate(value: string | undefined): value is string {
+  return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value))
+}
+
+interface VendasSearchParams {
+  payment?: string
+  from?: string
+  to?: string
+  page?: string
+}
+
+export default async function VendasPage({
+  searchParams,
+}: {
+  searchParams: Promise<VendasSearchParams>
+}) {
+  const sp = await searchParams
+  const payment = parsePayment(sp.payment)
+  const from = isIsoDate(sp.from) ? sp.from : undefined
+  const to = isIsoDate(sp.to) ? sp.to : undefined
+  const page = sp.page ? Math.max(1, parseInt(sp.page, 10) || 1) : 1
+
+  const { items: sales, total, totalPages, pageSize } = await getSalesPaged({
+    payment,
+    from,
+    to,
+    page,
+  })
+
+  const hasFilters = Boolean(payment || from || to)
+
+  const paginationParams: Record<string, string | undefined> = {
+    payment,
+    from,
+    to,
+  }
 
   return (
     <div className="space-y-6">
@@ -56,18 +98,77 @@ export default async function VendasPage() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Vendas</h1>
           <p className="text-sm text-slate-500 mt-1">
-            {sales.length} {sales.length === 1 ? 'venda registrada' : 'vendas registradas'}
+            {total} {total === 1 ? 'venda registrada' : 'vendas registradas'}
+            {hasFilters ? ' (com filtros aplicados)' : ''}
           </p>
         </div>
-        <Button asChild className="bg-green-600 hover:bg-green-700 text-white shadow-sm">
-          <Link href="/vendas/nova">
-            <Plus className="mr-1.5 h-4 w-4" />
-            Nova Venda
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            asChild
+            variant="outline"
+            className="border-slate-200 text-slate-700 hover:bg-slate-50"
+          >
+            <Link href="/vendas/fechamento">
+              <Wallet className="mr-1.5 h-4 w-4" />
+              Fechar caixa
+            </Link>
+          </Button>
+          <Button asChild className="bg-green-600 hover:bg-green-700 text-white shadow-sm">
+            <Link href="/vendas/nova">
+              <Plus className="mr-1.5 h-4 w-4" />
+              Nova Venda
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="border-slate-200/80 shadow-sm">
+        <form className="p-4 border-b border-slate-100 grid grid-cols-1 sm:grid-cols-12 gap-3">
+          <select
+            name="payment"
+            defaultValue={payment ?? ''}
+            className="sm:col-span-3 h-10 px-3 border border-slate-200 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/15 focus:border-blue-600"
+            aria-label="Método de pagamento"
+          >
+            <option value="">Todos os pagamentos</option>
+            <option value="cash">Dinheiro</option>
+            <option value="pix">PIX</option>
+            <option value="credit">Crédito</option>
+            <option value="debit">Débito</option>
+          </select>
+
+          <div className="sm:col-span-3">
+            <label className="block text-[11px] text-slate-500 mb-1">De</label>
+            <input
+              type="date"
+              name="from"
+              defaultValue={from}
+              className="w-full h-10 px-3 border border-slate-200 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/15 focus:border-blue-600"
+            />
+          </div>
+
+          <div className="sm:col-span-3">
+            <label className="block text-[11px] text-slate-500 mb-1">Até</label>
+            <input
+              type="date"
+              name="to"
+              defaultValue={to}
+              className="w-full h-10 px-3 border border-slate-200 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/15 focus:border-blue-600"
+            />
+          </div>
+
+          <div className="sm:col-span-3 flex gap-2 sm:items-end">
+            <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
+              Filtrar
+            </Button>
+            {hasFilters && (
+              <Button asChild variant="outline" className="border-slate-200 px-3" title="Limpar filtros">
+                <Link href="/vendas">×</Link>
+              </Button>
+            )}
+          </div>
+        </form>
+
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -84,7 +185,9 @@ export default async function VendasPage() {
                 <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                   Observações
                 </TableHead>
-                <TableHead className="w-20" />
+                <TableHead className="w-32 text-right pr-6 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Ações
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -96,17 +199,21 @@ export default async function VendasPage() {
                         <ShoppingCart className="h-6 w-6 text-slate-400" />
                       </div>
                       <p className="text-sm font-medium text-slate-600 mt-1">
-                        Nenhuma venda registrada
+                        {hasFilters ? 'Nenhuma venda encontrada' : 'Nenhuma venda registrada'}
                       </p>
                       <p className="text-xs text-slate-400">
-                        Registre sua primeira venda clicando em Nova Venda.
+                        {hasFilters
+                          ? 'Tente ajustar os filtros.'
+                          : 'Registre sua primeira venda clicando em Nova Venda.'}
                       </p>
-                      <Button asChild size="sm" className="mt-2 bg-green-600 hover:bg-green-700">
-                        <Link href="/vendas/nova">
-                          <Plus className="mr-1.5 h-3.5 w-3.5" />
-                          Nova Venda
-                        </Link>
-                      </Button>
+                      {!hasFilters && (
+                        <Button asChild size="sm" className="mt-2 bg-green-600 hover:bg-green-700">
+                          <Link href="/vendas/nova">
+                            <Plus className="mr-1.5 h-3.5 w-3.5" />
+                            Nova Venda
+                          </Link>
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -130,15 +237,29 @@ export default async function VendasPage() {
                     <TableCell className="text-sm text-slate-500 truncate max-w-xs">
                       {sale.notes || <span className="text-slate-300">—</span>}
                     </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        asChild
-                        className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                      >
-                        <Link href={`/vendas/${sale.id}`}>Ver</Link>
-                      </Button>
+                    <TableCell className="text-right pr-6">
+                      <div className="inline-flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          asChild
+                          className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                          title="Ver detalhes"
+                        >
+                          <Link href={`/vendas/${sale.id}`}>Ver</Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          asChild
+                          className="text-slate-600 hover:text-blue-700 hover:bg-blue-50"
+                          title="Imprimir recibo"
+                        >
+                          <Link href={`/vendas/${sale.id}/recibo`}>
+                            <Printer className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -146,6 +267,15 @@ export default async function VendasPage() {
             </TableBody>
           </Table>
         </div>
+
+        <Pagination
+          basePath="/vendas"
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          pageSize={pageSize}
+          searchParams={paginationParams}
+        />
       </Card>
     </div>
   )

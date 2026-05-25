@@ -1,9 +1,69 @@
 import { createClient } from '@/lib/supabase/server'
-import type { SaleWithItems } from '@/types/database'
+import type { PaymentMethod, Sale, SaleWithItems } from '@/types/database'
 
-export async function getSales(limit = 50) {
+export interface SalesListParams {
+  payment?: PaymentMethod
+  from?: string // YYYY-MM-DD
+  to?: string // YYYY-MM-DD
+  page?: number
+  pageSize?: number
+}
+
+export interface SalesListResult {
+  items: Sale[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+const DEFAULT_PAGE_SIZE = 25
+
+export async function getSalesPaged(
+  params: SalesListParams = {},
+): Promise<SalesListResult> {
   const supabase = await createClient()
+  const page = Math.max(1, params.page ?? 1)
+  const pageSize = Math.max(1, Math.min(100, params.pageSize ?? DEFAULT_PAGE_SIZE))
 
+  let query = supabase
+    .from('sales')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+
+  if (params.payment) {
+    query = query.eq('payment_method', params.payment)
+  }
+
+  if (params.from) {
+    query = query.gte('created_at', new Date(`${params.from}T00:00:00`).toISOString())
+  }
+  if (params.to) {
+    query = query.lte('created_at', new Date(`${params.to}T23:59:59.999`).toISOString())
+  }
+
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+  query = query.range(from, to)
+
+  const { data, error, count } = await query
+  if (error) throw new Error(error.message)
+
+  const total = count ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+
+  return {
+    items: (data ?? []) as Sale[],
+    total,
+    page,
+    pageSize,
+    totalPages,
+  }
+}
+
+/** Legacy helper kept for the dashboard widgets. */
+export async function getSales(limit = 50): Promise<Sale[]> {
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('sales')
     .select('*')
@@ -11,7 +71,7 @@ export async function getSales(limit = 50) {
     .limit(limit)
 
   if (error) throw new Error(error.message)
-  return data ?? []
+  return (data ?? []) as Sale[]
 }
 
 export async function getSaleById(id: string): Promise<SaleWithItems | null> {
@@ -27,7 +87,7 @@ export async function getSaleById(id: string): Promise<SaleWithItems | null> {
   return data as SaleWithItems
 }
 
-export async function getSalesByPeriod(from: Date, to: Date) {
+export async function getSalesByPeriod(from: Date, to: Date): Promise<Sale[]> {
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -38,7 +98,7 @@ export async function getSalesByPeriod(from: Date, to: Date) {
     .order('created_at')
 
   if (error) throw new Error(error.message)
-  return data ?? []
+  return (data ?? []) as Sale[]
 }
 
 export async function getTopProducts(limit = 5) {

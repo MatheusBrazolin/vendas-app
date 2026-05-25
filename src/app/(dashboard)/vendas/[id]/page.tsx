@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Calendar, CreditCard, FileText, Receipt } from 'lucide-react'
+import { ArrowLeft, Calendar, CreditCard, FileText, Printer, Receipt } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -74,9 +74,17 @@ export default async function VendaDetalhePage({
         </Button>
       </div>
 
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Detalhes da Venda</h1>
-        <p className="text-sm text-slate-500 mt-1">{formatDate(sale.created_at)}</p>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Detalhes da Venda</h1>
+          <p className="text-sm text-slate-500 mt-1">{formatDate(sale.created_at)}</p>
+        </div>
+        <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm w-fit">
+          <Link href={`/vendas/${sale.id}/recibo`}>
+            <Printer className="mr-1.5 h-4 w-4" />
+            Imprimir recibo
+          </Link>
+        </Button>
       </div>
 
       <Card className="border-slate-200/80 shadow-sm overflow-hidden">

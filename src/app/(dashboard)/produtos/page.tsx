@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Plus, Package, Search, SlidersHorizontal } from 'lucide-react'
+import { Plus, Package, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -11,8 +11,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Pagination } from '@/components/ui/pagination'
 import { ProductActions } from '@/components/products/product-actions'
-import { getProducts } from '@/lib/queries/products'
+import { getCategories, getProductsPaged, type StockFilter } from '@/lib/queries/products'
 import { formatCurrency } from '@/lib/utils/format'
 
 type StockStatus = 'out' | 'low' | 'ok'
@@ -41,7 +42,7 @@ function StockBadge({ status, quantity, min }: { status: StockStatus; quantity: 
       title={`Estoque mínimo: ${min}`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${dotStyles[status]}`} />
-      {quantity} {quantity === 1 ? 'un' : 'un'}
+      {quantity} un
     </span>
   )
 }
@@ -53,13 +54,46 @@ function computeMargin(sale: number, cost: number): { pct: number; absolute: num
   return { pct, absolute }
 }
 
+function parseStockFilter(value: string | undefined): StockFilter {
+  if (value === 'ok' || value === 'low' || value === 'out') return value
+  return 'all'
+}
+
+const STOCK_LABELS: Record<Exclude<StockFilter, 'all'>, string> = {
+  ok: 'Em estoque',
+  low: 'Estoque baixo',
+  out: 'Sem estoque',
+}
+
+interface ProdutosSearchParams {
+  q?: string
+  category?: string
+  stock?: string
+  page?: string
+}
+
 export default async function ProdutosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>
+  searchParams: Promise<ProdutosSearchParams>
 }) {
-  const { q } = await searchParams
-  const products = await getProducts(q)
+  const sp = await searchParams
+  const search = sp.q?.trim() || undefined
+  const categoryId = sp.category || undefined
+  const stock = parseStockFilter(sp.stock)
+  const page = sp.page ? Math.max(1, parseInt(sp.page, 10) || 1) : 1
+
+  const [{ items: products, total, totalPages, pageSize }, categories] = await Promise.all([
+    getProductsPaged({ search, categoryId, stock, page }),
+    getCategories(),
+  ])
+
+  // Normalize searchParams for pagination link composition
+  const paginationParams: Record<string, string | undefined> = {
+    q: search,
+    category: categoryId,
+    stock: stock === 'all' ? undefined : stock,
+  }
 
   return (
     <div className="space-y-6">
@@ -67,8 +101,8 @@ export default async function ProdutosPage({
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Produtos</h1>
           <p className="text-sm text-slate-500 mt-1">
-            {products.length} {products.length === 1 ? 'produto cadastrado' : 'produtos cadastrados'}
-            {q ? ` para "${q}"` : ''}
+            {total} {total === 1 ? 'produto cadastrado' : 'produtos cadastrados'}
+            {search ? ` para "${search}"` : ''}
           </p>
         </div>
         <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
@@ -80,27 +114,62 @@ export default async function ProdutosPage({
       </div>
 
       <Card className="border-slate-200/80 shadow-sm">
-        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row gap-3">
-          <form className="flex-1">
-            <div className="relative max-w-md">
-              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input
-                name="q"
-                defaultValue={q}
-                placeholder="Buscar por nome ou código..."
-                className="w-full h-10 pl-9 pr-3 border border-slate-200 rounded-md text-sm bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/15 focus:border-blue-600 transition-colors"
-              />
-            </div>
-          </form>
-          <Button
-            variant="outline"
-            type="button"
-            className="border-slate-200 text-slate-700 hover:bg-slate-50"
+        {/* Filters bar — uses a GET form so it's all server-rendered, no JS needed */}
+        <form className="p-4 border-b border-slate-100 grid grid-cols-1 sm:grid-cols-12 gap-3">
+          <div className="sm:col-span-5 relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              name="q"
+              defaultValue={search}
+              placeholder="Buscar por nome ou código..."
+              className="w-full h-10 pl-9 pr-3 border border-slate-200 rounded-md text-sm bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/15 focus:border-blue-600 transition-colors"
+            />
+          </div>
+
+          <select
+            name="category"
+            defaultValue={categoryId ?? ''}
+            className="sm:col-span-3 h-10 px-3 border border-slate-200 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/15 focus:border-blue-600"
+            aria-label="Categoria"
           >
-            <SlidersHorizontal className="mr-1.5 h-4 w-4" />
-            Filtros
-          </Button>
-        </div>
+            <option value="">Todas as categorias</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            name="stock"
+            defaultValue={stock === 'all' ? '' : stock}
+            className="sm:col-span-2 h-10 px-3 border border-slate-200 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/15 focus:border-blue-600"
+            aria-label="Status do estoque"
+          >
+            <option value="">Todos</option>
+            <option value="ok">{STOCK_LABELS.ok}</option>
+            <option value="low">{STOCK_LABELS.low}</option>
+            <option value="out">{STOCK_LABELS.out}</option>
+          </select>
+
+          <div className="sm:col-span-2 flex gap-2">
+            <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
+              Filtrar
+            </Button>
+            {(search || categoryId || stock !== 'all') && (
+              <Button
+                type="button"
+                asChild
+                variant="outline"
+                className="border-slate-200 px-3"
+                title="Limpar filtros"
+              >
+                <Link href="/produtos">×</Link>
+              </Button>
+            )}
+          </div>
+        </form>
 
         <div className="overflow-x-auto">
           <Table>
@@ -142,8 +211,8 @@ export default async function ProdutosPage({
                         Nenhum produto encontrado
                       </p>
                       <p className="text-xs text-slate-400">
-                        {q
-                          ? 'Tente ajustar a busca ou cadastre um novo produto.'
+                        {search || categoryId || stock !== 'all'
+                          ? 'Tente ajustar os filtros ou cadastre um novo produto.'
                           : 'Comece cadastrando seu primeiro produto.'}
                       </p>
                       <Button asChild size="sm" className="mt-2 bg-blue-600 hover:bg-blue-700">
@@ -228,6 +297,15 @@ export default async function ProdutosPage({
             </TableBody>
           </Table>
         </div>
+
+        <Pagination
+          basePath="/produtos"
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          pageSize={pageSize}
+          searchParams={paginationParams}
+        />
       </Card>
     </div>
   )
