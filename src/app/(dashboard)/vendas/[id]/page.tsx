@@ -13,6 +13,9 @@ import {
 } from '@/components/ui/table'
 import { getSaleById } from '@/lib/queries/sales'
 import { formatCurrency, formatDate, PAYMENT_LABELS } from '@/lib/utils/format'
+import { getCurrentUser } from '@/lib/auth/roles'
+import { shortSaleId } from '@/lib/utils/receipt'
+import { CancelSaleButton } from '@/components/sales/cancel-sale-button'
 import type { PaymentMethod } from '@/types/database'
 
 type PaymentStyle = { badge: string; dot: string }
@@ -54,9 +57,14 @@ export default async function VendaDetalhePage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const sale = await getSaleById(id)
+  const [sale, currentUser] = await Promise.all([
+    getSaleById(id),
+    getCurrentUser(),
+  ])
 
   if (!sale) notFound()
+
+  const isAdminUser = currentUser?.role === 'admin'
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -79,12 +87,17 @@ export default async function VendaDetalhePage({
           <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Detalhes da Venda</h1>
           <p className="text-sm text-slate-500 mt-1">{formatDate(sale.created_at)}</p>
         </div>
-        <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm w-fit">
-          <Link href={`/vendas/${sale.id}/recibo`}>
-            <Printer className="mr-1.5 h-4 w-4" />
-            Imprimir recibo
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {isAdminUser && (
+            <CancelSaleButton saleId={sale.id} shortId={shortSaleId(sale.id)} />
+          )}
+          <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm w-fit">
+            <Link href={`/vendas/${sale.id}/recibo`}>
+              <Printer className="mr-1.5 h-4 w-4" />
+              Imprimir recibo
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="border-slate-200/80 shadow-sm overflow-hidden">

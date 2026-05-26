@@ -255,6 +255,12 @@ export interface Database {
         }
         Returns: null
       }
+      cancel_sale: {
+        Args: {
+          p_sale_id: string
+        }
+        Returns: null
+      }
     }
   }
 }
