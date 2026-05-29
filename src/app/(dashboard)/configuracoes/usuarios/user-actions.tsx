@@ -38,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { resetEmployeePassword, deleteEmployee } from './actions'
+import { callServerAction } from '@/lib/utils/server-action'
 
 interface UserActionsProps {
   userId: string
@@ -65,9 +66,16 @@ export function UserActions({ userId, userName, isSelf }: UserActionsProps) {
       return
     }
     startTransition(async () => {
-      const result = await resetEmployeePassword(userId, password)
-      if (result.error) {
-        toast.error(result.error)
+      const call = await callServerAction(
+        () => resetEmployeePassword(userId, password),
+        { offlineMessage: 'Você está offline. Conecte-se para redefinir a senha.' },
+      )
+      if (!call.ok) {
+        toast.error(call.error)
+        return
+      }
+      if (call.data.error) {
+        toast.error(call.data.error)
         return
       }
       toast.success(`Senha de ${userName} redefinida.`)
@@ -77,9 +85,15 @@ export function UserActions({ userId, userName, isSelf }: UserActionsProps) {
 
   function handleDelete() {
     startTransition(async () => {
-      const result = await deleteEmployee(userId)
-      if (result.error) {
-        toast.error(result.error)
+      const call = await callServerAction(() => deleteEmployee(userId), {
+        offlineMessage: 'Você está offline. Conecte-se para excluir o funcionário.',
+      })
+      if (!call.ok) {
+        toast.error(call.error)
+        return
+      }
+      if (call.data.error) {
+        toast.error(call.data.error)
         return
       }
       toast.success(`${userName} foi removido.`)

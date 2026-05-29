@@ -4,6 +4,7 @@ import { useTransition } from 'react'
 import { toast } from 'sonner'
 import { ShieldCheck, User as UserIcon } from 'lucide-react'
 import { setUserRole } from './actions'
+import { callServerAction } from '@/lib/utils/server-action'
 import type { UserRole } from '@/types/database'
 
 interface UserRoleSelectProps {
@@ -32,7 +33,14 @@ export function UserRoleSelect({ userId, role, isSelf }: UserRoleSelectProps) {
     }
 
     startTransition(async () => {
-      const result = await setUserRole(userId, next)
+      const call = await callServerAction(() => setUserRole(userId, next), {
+        offlineMessage: 'Você está offline. Conecte-se para alterar o papel.',
+      })
+      if (!call.ok) {
+        toast.error(call.error)
+        return
+      }
+      const result = call.data
       if (result.success) {
         toast.success(
           next === 'admin' ? 'Usuário promovido a admin.' : 'Usuário definido como funcionário.',

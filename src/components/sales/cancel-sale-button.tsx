@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Trash2, Loader2, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cancelSale } from '@/app/(dashboard)/vendas/actions'
+import { callServerAction } from '@/lib/utils/server-action'
 
 interface CancelSaleButtonProps {
   saleId: string
@@ -26,7 +27,14 @@ export function CancelSaleButton({ saleId, shortId }: CancelSaleButtonProps) {
 
   function handleConfirm() {
     startTransition(async () => {
-      const result = await cancelSale(saleId)
+      const call = await callServerAction(() => cancelSale(saleId), {
+        offlineMessage: 'Você está offline. Conecte-se para excluir a venda.',
+      })
+      if (!call.ok) {
+        toast.error(call.error)
+        return
+      }
+      const result = call.data
       if (result.success) {
         toast.success('Venda excluída. Estoque devolvido aos produtos.')
         setIsOpen(false)
