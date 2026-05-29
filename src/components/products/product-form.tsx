@@ -201,6 +201,8 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
                   placeholder="EX-001 ou aponte o leitor"
                   autoComplete="off"
                   spellCheck={false}
+                  required
+                  aria-invalid={!!errors.code}
                   className="h-10 border-slate-200 pr-9"
                   {...codeRegister}
                   ref={(el) => {
@@ -237,6 +239,8 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
               <Input
                 id="name"
                 placeholder="Nome do produto"
+                required
+                aria-invalid={!!errors.name}
                 className="h-10 border-slate-200"
                 {...nameRegister}
                 ref={(el) => {
@@ -276,6 +280,8 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
                 step="0.01"
                 min="0"
                 placeholder="0,00"
+                required
+                aria-invalid={!!errors.sale_price}
                 className="h-10 border-slate-200"
                 {...register('sale_price')}
               />
@@ -294,6 +300,8 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
                 step="0.01"
                 min="0"
                 placeholder="0,00"
+                required
+                aria-invalid={!!errors.cost_price}
                 className="h-10 border-slate-200"
                 {...register('cost_price')}
               />
@@ -313,6 +321,8 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
                 type="number"
                 min="0"
                 placeholder="0"
+                required
+                aria-invalid={!!errors.stock_quantity}
                 className="h-10 border-slate-200"
                 {...register('stock_quantity')}
               />
@@ -330,6 +340,8 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
                 type="number"
                 min="0"
                 placeholder="0"
+                required
+                aria-invalid={!!errors.min_stock}
                 className="h-10 border-slate-200"
                 {...register('min_stock')}
               />
