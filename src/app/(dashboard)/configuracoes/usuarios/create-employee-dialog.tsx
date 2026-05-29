@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog'
 import { createEmployeeSchema, type CreateEmployeeFormData } from '@/lib/validations/auth.schema'
 import { createEmployee } from './actions'
+import { callServerAction } from '@/lib/utils/server-action'
 
 export function CreateEmployeeDialog() {
   const [open, setOpen] = useState(false)
@@ -39,9 +40,15 @@ export function CreateEmployeeDialog() {
 
   function onSubmit(data: CreateEmployeeFormData) {
     startTransition(async () => {
-      const result = await createEmployee(data)
-      if (result.error) {
-        toast.error(result.error)
+      const call = await callServerAction(() => createEmployee(data), {
+        offlineMessage: 'Você está offline. Conecte-se para criar o funcionário.',
+      })
+      if (!call.ok) {
+        toast.error(call.error)
+        return
+      }
+      if (call.data.error) {
+        toast.error(call.data.error)
         return
       }
       toast.success(`Funcionário "${data.username}" criado com sucesso.`)

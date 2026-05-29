@@ -29,6 +29,7 @@ import { Cart } from '@/components/sales/cart'
 import { SyncStatus } from '@/components/sales/sync-status'
 import { createSale } from '../actions'
 import { formatCurrency } from '@/lib/utils/format'
+import { callServerAction } from '@/lib/utils/server-action'
 import type { CartItem, PaymentMethod } from '@/types/database'
 
 const PAYMENT_OPTIONS: { value: PaymentMethod; label: string }[] = [
@@ -119,24 +120,39 @@ export function PDV() {
 
     setIsSubmitting(true)
 
-    const result = await createSale({
-      payment_method: paymentMethod,
-      notes,
-      items: cartItems.map((item) => ({
-        product_id: item.product.id,
-        quantity: item.quantity,
-      })),
-    })
+    // callServerAction guarantees we always exit the loading state, even when
+    // the server action throws (e.g. user went offline mid-click). Without
+    // this, the button would sit in "Processando..." forever and the cashier
+    // wouldn't know whether the sale went through.
+    const result = await callServerAction(
+      () =>
+        createSale({
+          payment_method: paymentMethod,
+          notes,
+          items: cartItems.map((item) => ({
+            product_id: item.product.id,
+            quantity: item.quantity,
+          })),
+        }),
+      { offlineMessage: 'Você está offline. Conecte-se para confirmar a venda.' },
+    )
 
     setIsSubmitting(false)
 
-    if (result.error) {
+    if (!result.ok) {
       toast.error(result.error)
       return
     }
 
+    // The server action itself returns `{ saleId?, error? }` — surface that
+    // error too, separately from network / offline failures above.
+    if (result.data.error) {
+      toast.error(result.data.error)
+      return
+    }
+
     toast.success('Venda registrada com sucesso!')
-    router.push(`/vendas/${result.saleId}`)
+    router.push(`/vendas/${result.data.saleId}`)
   }
 
   // Keep the button clickable when the payment method is missing so the user

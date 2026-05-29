@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/select'
 import { productSchema, type ProductFormData } from '@/lib/validations/product.schema'
 import { lookupProductByBarcode } from '@/app/(dashboard)/produtos/actions'
+import { callServerAction } from '@/lib/utils/server-action'
 import type { Category, Product } from '@/types/database'
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -174,7 +175,19 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
         if (v !== null && v !== undefined) formData.set(k, String(v))
       })
 
-      const result = await onSubmit(formData)
+      // Guard the server call so the "Salvando..." button doesn't hang
+      // forever when the network drops. The server action itself can also
+      // return an `error` field (e.g. duplicate code) — handled below.
+      const call = await callServerAction(() => onSubmit(formData), {
+        offlineMessage: 'Você está offline. Conecte-se para salvar o produto.',
+      })
+
+      if (!call.ok) {
+        toast.error(call.error)
+        return
+      }
+
+      const result = call.data
       if (result?.error) {
         if (result.error === 'Código de produto já existe.') {
           setError('code', { message: result.error })

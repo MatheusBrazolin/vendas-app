@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { createCategory, deleteCategory } from './actions'
+import { callServerAction } from '@/lib/utils/server-action'
 import type { Category } from '@/types/database'
 
 interface CategoryManagerProps {
@@ -22,25 +23,38 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
     if (!newName.trim()) return
     setIsAdding(true)
 
-    const result = await createCategory(newName.trim())
-    if (result?.error) {
-      toast.error(result.error)
-    } else {
-      toast.success('Categoria criada')
-      setNewName('')
-      // Optimistic — page will revalidate
-    }
+    const call = await callServerAction(() => createCategory(newName.trim()), {
+      offlineMessage: 'Você está offline. Conecte-se para criar a categoria.',
+    })
     setIsAdding(false)
+
+    if (!call.ok) {
+      toast.error(call.error)
+      return
+    }
+    if (call.data?.error) {
+      toast.error(call.data.error)
+      return
+    }
+    toast.success('Categoria criada')
+    setNewName('')
+    // Optimistic — page will revalidate
   }
 
   async function handleDelete(id: string, name: string) {
-    const result = await deleteCategory(id)
-    if (result?.error) {
-      toast.error(result.error)
-    } else {
-      setCategories((prev) => prev.filter((c) => c.id !== id))
-      toast.success(`Categoria "${name}" removida`)
+    const call = await callServerAction(() => deleteCategory(id), {
+      offlineMessage: 'Você está offline. Conecte-se para excluir a categoria.',
+    })
+    if (!call.ok) {
+      toast.error(call.error)
+      return
     }
+    if (call.data?.error) {
+      toast.error(call.data.error)
+      return
+    }
+    setCategories((prev) => prev.filter((c) => c.id !== id))
+    toast.success(`Categoria "${name}" removida`)
   }
 
   return (
