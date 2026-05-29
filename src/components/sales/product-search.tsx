@@ -8,6 +8,10 @@ import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { formatCurrency } from '@/lib/utils/format'
 import { useDebounce } from '@/lib/utils/use-debounce'
+import {
+  findProductByCodeLocal,
+  searchProductsLocal,
+} from '@/lib/offline/queries'
 import type { Product, CartItem } from '@/types/database'
 
 interface ProductSearchProps {
@@ -29,25 +33,34 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
     inputRef.current?.focus()
   }, [])
 
-  // Fuzzy search for manual typing (does NOT auto-add — just shows the dropdown)
+  // Fuzzy search for manual typing (does NOT auto-add — just shows the dropdown).
+  // Reads from the local IndexedDB cache populated by SyncProvider so the
+  // search works offline and responds instantly even on flaky connections.
+  // Background sync keeps the cache fresh — the PDV trades sub-second freshness
+  // for sub-millisecond search latency, which is the right call for a cash register.
   useEffect(() => {
     if (!debouncedQuery.trim()) {
       setResults([])
       return
     }
+    let cancelled = false
     setLoading(true)
-    const supabase = createClient()
-    supabase
-      .from('products')
-      .select('*')
-      .eq('is_active', true)
-      .gt('stock_quantity', 0)
-      .or(`name.ilike.%${debouncedQuery}%,code.ilike.%${debouncedQuery}%`)
-      .limit(10)
-      .then(({ data }) => {
-        setResults(data ?? [])
-        setLoading(false)
+    searchProductsLocal(debouncedQuery)
+      .then((data) => {
+        if (cancelled) return
+        setResults(data)
       })
+      .catch((err) => {
+        if (cancelled) return
+        console.error('[product-search] local search failed', err)
+        setResults([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [debouncedQuery])
 
   function getQuantity(product: Product): number {
@@ -79,39 +92,53 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
    * Only called when the input looks like a numeric barcode — searching by
    * name does NOT route through here, so the user never sees a misleading
    * "produto não encontrado" toast when typing a product name.
+   *
+   * Lookup strategy: cache-first, network fallback. If the code isn't in
+   * the local IndexedDB cache AND the browser is online, we ask Supabase
+   * (handles the case of a product just registered on another terminal).
+   * Offline + cache miss = honest "not found" toast.
    */
   async function handleBarcodeLookup(code: string) {
     const trimmed = code.trim()
     if (!trimmed) return
 
     setScanning(true)
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('code', trimmed)
-      .eq('is_active', true)
-      .maybeSingle()
-    setScanning(false)
-
-    if (error) {
-      toast.error('Erro ao buscar produto. Tente novamente.')
-      return
+    let product: Product | null = null
+    try {
+      const local = await findProductByCodeLocal(trimmed)
+      if (local) {
+        product = local
+      } else if (typeof navigator !== 'undefined' && navigator.onLine) {
+        const supabase = createClient()
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('code', trimmed)
+          .eq('is_active', true)
+          .maybeSingle()
+        if (error) {
+          toast.error('Erro ao buscar produto. Tente novamente.')
+          return
+        }
+        product = data
+      }
+    } finally {
+      setScanning(false)
     }
 
-    if (!data) {
+    if (!product) {
       toast.error(`Código não encontrado: ${trimmed}`)
       inputRef.current?.select()
       return
     }
 
-    if (data.stock_quantity <= 0) {
-      toast.error(`Sem estoque: ${data.name}`)
+    if (product.stock_quantity <= 0) {
+      toast.error(`Sem estoque: ${product.name}`)
       inputRef.current?.select()
       return
     }
 
-    handleAdd(data, 1)
+    handleAdd(product, 1)
   }
 
   /** A pure-digit string of 4+ chars is treated as a barcode/SKU. */

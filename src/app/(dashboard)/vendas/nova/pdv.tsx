@@ -26,6 +26,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { ProductSearch } from '@/components/sales/product-search'
 import { Cart } from '@/components/sales/cart'
+import { SyncStatus } from '@/components/sales/sync-status'
 import { createSale } from '../actions'
 import { formatCurrency } from '@/lib/utils/format'
 import type { CartItem, PaymentMethod } from '@/types/database'
@@ -147,11 +148,12 @@ export function PDV() {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
       <div className="lg:col-span-2 space-y-4">
         <Card className="border-slate-200/80 shadow-sm">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between gap-3 space-y-0">
             <CardTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
               <Search className="h-4 w-4 text-slate-500" />
               Buscar produto
             </CardTitle>
+            <SyncStatus />
           </CardHeader>
           <CardContent>
             <ProductSearch onAdd={handleAddItem} />
