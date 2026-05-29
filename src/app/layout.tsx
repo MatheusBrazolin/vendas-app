@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import { Toaster } from 'sonner'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register'
 import './globals.css'
 
@@ -64,6 +65,7 @@ export default function RootLayout({
         {children}
         <Toaster richColors position="top-right" />
         <ServiceWorkerRegister />
+        <SpeedInsights />
       </body>
     </html>
   )
