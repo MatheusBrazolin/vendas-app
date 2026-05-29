@@ -1,5 +1,5 @@
 /**
- * VendasApp service worker — Phase 2 (shell cache).
+ * VendasApp service worker — Phase 2 (shell cache + offline fallback).
  *
  * Caches the static assets that make up the app shell so the PWA can boot
  * even with no network. Combined with the IndexedDB layer in
@@ -11,8 +11,9 @@
  *     cache-first. Next.js fingerprints these so they're safe to keep
  *     forever; new deploys produce new URLs.
  *   - HTML/navigation requests (mode === 'navigate'): network-first with
- *     cache fallback. Falling back to the last cached HTML keeps the app
- *     loadable offline; when online we always serve the fresh page.
+ *     cache fallback. If both fail (offline AND never visited the route
+ *     before), serve the precached `/offline.html` so the user gets a
+ *     branded "you're offline" page instead of Chrome's ERR_FAILED.
  *   - Anything cross-origin (Supabase, Vercel analytics): pass through
  *     without touching the cache — those responses are user-scoped and
  *     / or rate-limited and we don't want to second-guess them.
@@ -23,12 +24,38 @@
  * installs activate a fresh cache and drop the previous version.
  */
 
-const SW_VERSION = 'v2-2026-05-29'
+const SW_VERSION = 'v3-2026-05-29'
 const SHELL_CACHE = `vendasapp-shell-${SW_VERSION}`
 
+/**
+ * URLs that must be cached at install time so they're always available
+ * offline, even before the user has navigated to them. Kept minimal —
+ * just the offline fallback page and the brand icons used inside it.
+ */
+const PRECACHE_URLS = [
+  '/offline.html',
+  '/icon-192.png',
+  '/icon-512.png',
+]
+
 self.addEventListener('install', (event) => {
-  // Activate this SW immediately instead of waiting for all old tabs to close.
-  event.waitUntil(self.skipWaiting())
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(SHELL_CACHE)
+      // `addAll` is atomic — if any URL fails, the whole install fails and
+      // we won't activate a half-broken SW. Use `Promise.all` of individual
+      // adds to make the offline fallback resilient even if an icon 404s.
+      await Promise.all(
+        PRECACHE_URLS.map((url) =>
+          cache
+            .add(new Request(url, { cache: 'reload' }))
+            .catch((err) => console.warn(`[sw] precache failed for ${url}`, err)),
+        ),
+      )
+      // Activate this SW immediately instead of waiting for all old tabs to close.
+      await self.skipWaiting()
+    })(),
+  )
 })
 
 self.addEventListener('activate', (event) => {
@@ -67,9 +94,9 @@ self.addEventListener('fetch', (event) => {
 
   // Navigation requests (HTML): network-first with cache fallback so the
   // user gets fresh server-rendered content when online and the last-seen
-  // HTML when offline.
+  // HTML when offline. Last-resort fallback is the branded offline page.
   if (request.mode === 'navigate') {
-    event.respondWith(networkFirst(request))
+    event.respondWith(navigationHandler(request))
     return
   }
 
@@ -87,17 +114,18 @@ async function cacheFirst(request) {
   const cache = await caches.open(SHELL_CACHE)
   const cached = await cache.match(request)
   if (cached) return cached
-  try {
-    const response = await fetch(request)
-    if (response.ok) cache.put(request, response.clone())
-    return response
-  } catch (err) {
-    // Last resort — bubble the error so the browser shows its usual offline UI.
-    throw err
-  }
+  const response = await fetch(request)
+  if (response.ok) cache.put(request, response.clone())
+  return response
 }
 
-async function networkFirst(request) {
+/**
+ * Navigation handler — tries network first, falls back to the page's own
+ * cache entry, then to /offline.html. The offline.html fallback is the
+ * crucial layer that prevents ERR_FAILED on routes the user hasn't visited
+ * before going offline.
+ */
+async function navigationHandler(request) {
   const cache = await caches.open(SHELL_CACHE)
   try {
     const response = await fetch(request)
@@ -110,6 +138,9 @@ async function networkFirst(request) {
   } catch (err) {
     const cached = await cache.match(request)
     if (cached) return cached
+    const offline = await cache.match('/offline.html')
+    if (offline) return offline
+    // Truly nothing to serve — bubble up so Chrome shows its default error.
     throw err
   }
 }
