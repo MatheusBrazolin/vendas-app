@@ -10,9 +10,11 @@ import {
   Search,
   Receipt,
   CreditCard,
+  Banknote,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -41,12 +43,31 @@ export function PDV() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('')
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // Track whether the user has tried to confirm the sale at least once.
+  // Used to show validation feedback (red border, error message) only AFTER
+  // the first attempt, so a fresh form doesn't look like it's already in error.
+  const [triedSubmit, setTriedSubmit] = useState(false)
+  // Free-text input bound to the "valor recebido" field. We keep it as string
+  // so the user can type "12,50" or partial numbers without React fighting them.
+  const [cashReceivedRaw, setCashReceivedRaw] = useState('')
+  const paymentMissing = !paymentMethod
 
   const total = cartItems.reduce(
     (sum, item) => sum + item.product.sale_price * item.quantity,
     0
   )
   const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+
+  // Parse the "valor recebido" string into a number. Accept both "12,50"
+  // (pt-BR) and "12.50" so the cashier can type whichever feels natural.
+  // Returns NaN when the field is empty or unparseable, which we treat as
+  // "not entered yet" for UI purposes.
+  const cashReceived = cashReceivedRaw.trim()
+    ? parseFloat(cashReceivedRaw.replace(',', '.'))
+    : NaN
+  const hasCashEntered = !Number.isNaN(cashReceived)
+  const change = hasCashEntered ? cashReceived - total : 0
+  const cashShort = hasCashEntered && cashReceived < total
 
   function handleAddItem(item: CartItem) {
     setCartItems((prev) => {
@@ -76,12 +97,22 @@ export function PDV() {
   }
 
   async function handleSubmit() {
+    setTriedSubmit(true)
+
+    if (cartItems.length === 0) {
+      toast.error('Adicione pelo menos um produto')
+      return
+    }
     if (!paymentMethod) {
       toast.error('Selecione o método de pagamento')
       return
     }
-    if (cartItems.length === 0) {
-      toast.error('Adicione pelo menos um produto')
+    // Cash sales: block if the entered amount is less than the total. The
+    // cashier might still confirm a cash sale without typing anything in
+    // (e.g. they already calculated the change in their head) — only when
+    // they DID type something AND it's short do we refuse.
+    if (paymentMethod === 'cash' && hasCashEntered && cashShort) {
+      toast.error('Valor recebido é menor que o total da venda')
       return
     }
 
@@ -107,7 +138,10 @@ export function PDV() {
     router.push(`/vendas/${result.saleId}`)
   }
 
-  const canSubmit = !isSubmitting && cartItems.length > 0 && !!paymentMethod
+  // Keep the button clickable when the payment method is missing so the user
+  // gets explicit feedback (toast + red border on the dropdown) instead of a
+  // silent disabled button that doesn't explain why nothing happens.
+  const canSubmit = !isSubmitting && cartItems.length > 0
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -145,7 +179,7 @@ export function PDV() {
       </div>
 
       <div>
-        <Card className="sticky top-24 border-slate-200/80 shadow-sm overflow-hidden">
+        <Card className="lg:sticky lg:top-24 border-slate-200/80 shadow-sm overflow-hidden">
           <CardHeader className="bg-slate-50/60 border-b border-slate-100 pb-3">
             <CardTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
               <Receipt className="h-4 w-4 text-slate-500" />
@@ -160,9 +194,26 @@ export function PDV() {
               </Label>
               <Select
                 value={paymentMethod}
-                onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
+                // Base UI uses `items` to map raw values → labels in
+                // <SelectValue>. Without it the trigger renders "debit"
+                // instead of "Cartão de Débito".
+                items={PAYMENT_OPTIONS}
+                onValueChange={(v) => {
+                  const next = v as PaymentMethod
+                  setPaymentMethod(next)
+                  // Reset the cash-received field when switching away from
+                  // cash so a stale value doesn't follow the user around.
+                  if (next !== 'cash') setCashReceivedRaw('')
+                }}
               >
-                <SelectTrigger className="h-10 border-slate-200">
+                <SelectTrigger
+                  aria-invalid={triedSubmit && paymentMissing}
+                  className={
+                    triedSubmit && paymentMissing
+                      ? 'h-10 border-red-500 ring-2 ring-red-100'
+                      : 'h-10 border-slate-200'
+                  }
+                >
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -173,7 +224,89 @@ export function PDV() {
                   ))}
                 </SelectContent>
               </Select>
+              {triedSubmit && paymentMissing && (
+                <p className="text-red-500 text-xs">
+                  Selecione o método de pagamento para finalizar.
+                </p>
+              )}
             </div>
+
+            {paymentMethod === 'cash' && (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 space-y-3">
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="cash-received"
+                    className="text-xs font-medium text-emerald-900 flex items-center gap-1.5"
+                  >
+                    <Banknote className="h-3.5 w-3.5 text-emerald-700" />
+                    Valor recebido
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-500 pointer-events-none">
+                      R$
+                    </span>
+                    <Input
+                      id="cash-received"
+                      type="text"
+                      inputMode="decimal"
+                      value={cashReceivedRaw}
+                      onChange={(e) => {
+                        // Only accept digits and a single comma/period — keeps
+                        // the field tidy without fighting the user mid-typing.
+                        const cleaned = e.target.value.replace(/[^\d,.]/g, '')
+                        setCashReceivedRaw(cleaned)
+                      }}
+                      placeholder="0,00"
+                      autoComplete="off"
+                      className="h-10 pl-9 bg-white border-emerald-200 focus-visible:border-emerald-500 focus-visible:ring-emerald-200"
+                    />
+                  </div>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {[total, 50, 100, 200].map((preset, idx) => (
+                      <button
+                        key={`${preset}-${idx}`}
+                        type="button"
+                        onClick={() => setCashReceivedRaw(preset.toFixed(2).replace('.', ','))}
+                        className="px-2 py-0.5 text-[11px] font-medium rounded-md bg-white border border-emerald-200 text-emerald-800 hover:bg-emerald-100 transition-colors"
+                      >
+                        {idx === 0 ? 'Valor exato' : formatCurrency(preset)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {hasCashEntered && (
+                  <div
+                    className={
+                      cashShort
+                        ? 'rounded-md bg-red-50 border border-red-200 px-3 py-2'
+                        : 'rounded-md bg-emerald-100/60 border border-emerald-300 px-3 py-2'
+                    }
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span
+                        className={
+                          cashShort
+                            ? 'text-xs font-medium text-red-700'
+                            : 'text-xs font-medium text-emerald-900'
+                        }
+                      >
+                        {cashShort ? 'Falta receber' : 'Troco'}
+                      </span>
+                      <span
+                        className={
+                          cashShort
+                            ? 'text-lg font-bold tabular-nums text-red-700'
+                            : 'text-lg font-bold tabular-nums text-emerald-900'
+                        }
+                      >
+                        {formatCurrency(Math.abs(change))}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <Label htmlFor="notes" className="text-xs font-medium text-slate-700">
@@ -220,11 +353,6 @@ export function PDV() {
               )}
             </Button>
 
-            {!paymentMethod && cartItems.length > 0 && (
-              <p className="text-xs text-slate-500 text-center">
-                Selecione o método de pagamento para finalizar.
-              </p>
-            )}
             {cartItems.length === 0 && (
               <p className="text-xs text-slate-500 text-center">
                 Adicione produtos ao carrinho para finalizar.
