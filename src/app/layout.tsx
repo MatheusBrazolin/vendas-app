@@ -1,6 +1,7 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import { Toaster } from 'sonner'
+import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register'
 import './globals.css'
 
 /**
@@ -28,6 +29,25 @@ const jetBrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'VendasApp — Gestão de Vendas',
   description: 'Sistema de gestão de vendas e estoque',
+  applicationName: 'VendasApp',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'VendasApp',
+  },
+  // The web manifest is auto-linked by Next.js from `app/manifest.ts`,
+  // but we still declare apple-touch-icon explicitly because iOS doesn't
+  // read it from the manifest.
+  icons: {
+    apple: '/apple-touch-icon.png',
+  },
+}
+
+// The theme-color drives the OS chrome (status bar / titlebar) when the
+// app is installed as a PWA. Matches the dark sidebar so the installed
+// app feels cohesive top-to-bottom.
+export const viewport: Viewport = {
+  themeColor: '#0f172a',
 }
 
 export default function RootLayout({
@@ -43,6 +63,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans">
         {children}
         <Toaster richColors position="top-right" />
+        <ServiceWorkerRegister />
       </body>
     </html>
   )
