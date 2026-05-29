@@ -1,0 +1,42 @@
+name: ✨ Feature request
+description: Sugerir uma funcionalidade nova ou melhoria
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qual problema isso resolve?
+      description: Foque no problema, não na solução. Quem é afetado e como hoje?
+      placeholder: |
+        Lojistas que recebem em dinheiro perdem tempo calculando troco de cabeça
+        e às vezes erram.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solução proposta
+      description: Como você imagina que deveria funcionar?
+      placeholder: |
+        Ao selecionar "Dinheiro" no PDV, abrir um painel com campo "Valor recebido"
+        e mostrar o troco calculado automaticamente.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas que considerei
+      description: Outras formas de resolver o problema que você descartou (e por quê).
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridade percebida
+      options:
+        - Bloqueia o uso (não dá pra trabalhar sem)
+        - Atrapalha o fluxo diário
+        - Nice-to-have
+    validations:
+      required: true

@@ -1,0 +1,61 @@
+name: 🐞 Bug report
+description: Algo está quebrado ou se comportando diferente do esperado
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: O que aconteceu?
+      description: Descreva o comportamento atual, com o máximo de detalhe que conseguir lembrar.
+      placeholder: |
+        Cliquei em "Confirmar venda" e o app travou na tela de carregamento por 30s.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: O que deveria acontecer?
+      placeholder: A venda deveria registrar e me levar para /vendas/<id>.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      description: Numerado, do começo ao bug. Quanto mais específico, mais rápido o fix.
+      placeholder: |
+        1. Login com usuário admin
+        2. Ir em /vendas/nova
+        3. Adicionar 3 produtos
+        4. Selecionar Dinheiro
+        5. Clicar em Confirmar venda
+    validations:
+      required: true
+
+  - type: dropdown
+    id: where
+    attributes:
+      label: Onde aconteceu?
+      options:
+        - Produção (vendas-app-topaz.vercel.app)
+        - PWA instalado
+        - Dev local (npm run dev)
+        - Outro (especificar em "Contexto")
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Navegador / SO
+      placeholder: Chrome 142 / Windows 11
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto extra
+      description: Print, log do console, output da rede, qualquer coisa que ajude.

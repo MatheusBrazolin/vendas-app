@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Dúvida / Discussão
+    url: https://github.com/MatheusBrazolin/vendas-app/discussions
+    about: Para perguntas abertas, ideias e discussões — não para bugs ou pedidos de feature.
