@@ -18,7 +18,7 @@ export default async function DashboardLayout({
       <Sidebar role={user.role} />
       <div className="flex-1 flex flex-col min-w-0">
         <Header />
-        <main className="flex-1 px-8 py-8">{children}</main>
+        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">{children}</main>
       </div>
     </div>
   )
