@@ -133,14 +133,7 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-500">
-        Não tem uma conta?{' '}
-        <Link href="/cadastro" className="font-medium text-blue-600 hover:text-blue-700">
-          Cadastrar-se
-        </Link>
-      </p>
-
-      <p className="mt-4 text-center text-xs text-slate-400">
+      <p className="mt-6 text-center text-xs text-slate-400">
         Protegido por autenticação Supabase
       </p>
     </div>

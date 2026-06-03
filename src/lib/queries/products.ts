@@ -72,25 +72,6 @@ export async function getProductsPaged(
   return { items, total, page, pageSize, totalPages }
 }
 
-/** Lightweight legacy helper — keep so the rest of the app doesn't break. */
-export async function getProducts(search?: string): Promise<ProductWithCategory[]> {
-  const { items } = await getProductsPaged({ search, pageSize: 100 })
-  return items
-}
-
-export async function getProductById(id: string): Promise<ProductWithCategory | null> {
-  const supabase = await createClient()
-
-  const { data, error } = await supabase
-    .from('products')
-    .select('*, categories(id, name)')
-    .eq('id', id)
-    .single()
-
-  if (error) return null
-  return data as ProductWithCategory
-}
-
 export async function getLowStock(): Promise<ProductWithCategory[]> {
   const supabase = await createClient()
 

@@ -45,69 +45,6 @@ export async function signIn(usernameOrEmail: string, password: string) {
   redirect(await postLoginPath())
 }
 
-export async function signUp(
-  email: string,
-  password: string,
-  firstName: string,
-  lastName: string,
-) {
-  const supabase = await createClient()
-
-  // first_name / last_name go into raw_user_meta_data so the
-  // `handle_new_user_profile` trigger picks them up and writes them
-  // into public.profiles in the same transaction as the signup.
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-      },
-    },
-  })
-
-  if (error) {
-    const msg = error.message.toLowerCase()
-
-    if (msg.includes('already registered') || msg.includes('already been registered')) {
-      return { error: 'Este email já está cadastrado.' }
-    }
-    if (msg.includes('password') && (msg.includes('short') || msg.includes('weak'))) {
-      return { error: 'Senha muito fraca. Use ao menos 6 caracteres.' }
-    }
-    if (msg.includes('rate limit')) {
-      return { error: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.' }
-    }
-    if (msg.includes('signup') && msg.includes('disabled')) {
-      return { error: 'Cadastros estão desabilitados no momento.' }
-    }
-    if (msg.includes('database error')) {
-      // Costuma ser trigger no banco falhando ou tabela ausente.
-      return {
-        error:
-          'Erro no banco ao criar conta. Verifique se a migration de roles foi aplicada (user_roles).',
-      }
-    }
-
-    // Surface the real Supabase message so we can debug instead of guessing
-    return { error: `Falha no cadastro: ${error.message}` }
-  }
-
-  // When email confirmation is ON in Supabase, signUp does NOT create a session.
-  // We have to send the user to /login instead of /vendas/nova.
-  if (!data.session) {
-    return {
-      error:
-        'Conta criada! Verifique seu email para confirmar antes de fazer login. (Se não receber, peça ao admin para confirmar manualmente no painel.)',
-    }
-  }
-
-  revalidatePath('/', 'layout')
-  // Novos signups sao sempre 'employee' (trigger no banco), entao vao pro PDV.
-  redirect('/vendas/nova')
-}
-
 export async function signOut() {
   const supabase = await createClient()
   await supabase.auth.signOut()

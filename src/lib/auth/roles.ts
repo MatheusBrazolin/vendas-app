@@ -72,12 +72,3 @@ export async function requireAdmin(): Promise<CurrentUser> {
   if (user.role !== 'admin') redirect('/vendas/nova')
   return user
 }
-
-/**
- * Server-side guard for any authenticated page.
- */
-export async function requireUser(): Promise<CurrentUser> {
-  const user = await getCurrentUser()
-  if (!user) redirect('/login')
-  return user
-}

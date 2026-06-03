@@ -61,19 +61,6 @@ export async function getSalesPaged(
   }
 }
 
-/** Legacy helper kept for the dashboard widgets. */
-export async function getSales(limit = 50): Promise<Sale[]> {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('sales')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(limit)
-
-  if (error) throw new Error(error.message)
-  return (data ?? []) as Sale[]
-}
-
 export async function getSaleById(id: string): Promise<SaleWithItems | null> {
   const supabase = await createClient()
 
@@ -85,20 +72,6 @@ export async function getSaleById(id: string): Promise<SaleWithItems | null> {
 
   if (error) return null
   return data as SaleWithItems
-}
-
-export async function getSalesByPeriod(from: Date, to: Date): Promise<Sale[]> {
-  const supabase = await createClient()
-
-  const { data, error } = await supabase
-    .from('sales')
-    .select('*')
-    .gte('created_at', from.toISOString())
-    .lte('created_at', to.toISOString())
-    .order('created_at')
-
-  if (error) throw new Error(error.message)
-  return (data ?? []) as Sale[]
 }
 
 export async function getTopProducts(limit = 5) {

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { formatCurrency } from '@/lib/utils/format'
-import { useDebounce } from '@/lib/utils/use-debounce'
+import { useDebounce } from '@/hooks/use-debounce'
 import type { Product, CartItem } from '@/types/database'
 
 interface ProductSearchProps {
