@@ -115,14 +115,29 @@ npm run desktop
 # Apontar para um servidor local durante o desenvolvimento
 # (PowerShell)  $env:VENDAS_APP_URL="http://localhost:3000"; npm run desktop
 
-# Gerar o instalador → pasta instalador/VendasApp-Instalador-<versão>.exe
+# Gerar o instalador → pasta instalador/VendasApp-Instalador.exe
 npm run desktop:build
 ```
 
 O `npm run desktop:build` cria a pasta **`instalador/`** na raiz do projeto. É ali
-que fica o arquivo de instalação: **`instalador/VendasApp-Instalador-<versão>.exe`**.
+que fica o arquivo de instalação: **`instalador/VendasApp-Instalador.exe`**.
 Esse `.exe` é autocontido — copie-o para qualquer PC Windows e dê duplo-clique para
 instalar (não precisa de Node nem nada). A pasta `instalador/` é ignorada pelo git.
+
+### Disponibilizar o download no site (admin)
+
+Há uma página **admin** em **`/configuracoes/baixar`** (no menu "Administração")
+com o botão de baixar — visível só para administradores e oculta dentro do próprio
+app desktop. Ela aponta para o instalador hospedado no **GitHub Releases**:
+
+1. Gere o `.exe` (`npm run desktop:build`).
+2. No GitHub, crie um **Release** no repo e suba `instalador/VendasApp-Instalador.exe`
+   como *asset* (mantenha exatamente esse nome).
+3. Pronto — o botão usa a URL estável de "último release":
+   `…/releases/latest/download/VendasApp-Instalador.exe`. A cada novo release com o
+   mesmo nome de arquivo, o botão passa a baixar a versão nova sem mexer no código.
+
+Para hospedar o `.exe` em outro lugar, defina `NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL`.
 
 > **Login offline:** a autenticação é do Supabase e exige rede. O cenário coberto é
 > "estava logado e a internet caiu" — aí tudo continua funcionando. Um *cold start*

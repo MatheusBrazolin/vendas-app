@@ -10,6 +10,7 @@ import {
   Tags,
   ShoppingBag,
   Users,
+  MonitorDown,
   Menu,
   type LucideIcon,
 } from 'lucide-react'
@@ -50,6 +51,7 @@ const navSections: NavSection[] = [
     title: 'Administração',
     items: [
       { href: '/configuracoes/usuarios', label: 'Usuários', icon: Users, adminOnly: true },
+      { href: '/configuracoes/baixar', label: 'Baixar app', icon: MonitorDown, adminOnly: true },
     ],
   },
 ]
