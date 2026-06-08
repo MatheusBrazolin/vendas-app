@@ -13,13 +13,42 @@
  */
 
 import Dexie, { type Table } from 'dexie'
-import type { Product, Category } from '@/types/database'
+import type { Product, Category, PaymentMethod } from '@/types/database'
 
 /** Mirror of `public.products.Row`. Same shape so server types reuse cleanly. */
 export type CachedProduct = Product
 
 /** Mirror of `public.categories.Row`. */
 export type CachedCategory = Category
+
+/** One line of a queued offline sale. Carries enough to render a provisional
+ *  receipt and to rebuild the RPC payload without re-reading the catalog. */
+export interface PendingSaleItem {
+  product_id: string
+  quantity: number
+  name: string
+  unit_price: number
+}
+
+/**
+ * A sale rung up while offline (or that failed to reach the server), waiting
+ * to be flushed to Supabase. `id` is the client-generated UUID used as the
+ * idempotency key by the `create_sale_with_items` RPC.
+ */
+export interface PendingSale {
+  id: string
+  payment_method: PaymentMethod
+  notes: string
+  items: PendingSaleItem[]
+  total: number
+  createdAt: string // ISO timestamp
+  /** `pending` = waiting to sync; `failed` = server rejected (e.g. stock), needs review. */
+  status: 'pending' | 'failed'
+  /** Last error surfaced by the server, when status is `failed`. */
+  error?: string
+  /** How many flush attempts have run, for backoff/diagnostics. */
+  attempts: number
+}
 
 /**
  * One row per entity (`products`, `categories`), tracking the last time a
@@ -36,6 +65,7 @@ class VendasAppDB extends Dexie {
   products!: Table<CachedProduct, string>
   categories!: Table<CachedCategory, string>
   syncMeta!: Table<SyncMeta, string>
+  pendingSales!: Table<PendingSale, string>
 
   constructor() {
     super('vendas-app')
@@ -48,6 +78,14 @@ class VendasAppDB extends Dexie {
       products: 'id, code, name, is_active',
       categories: 'id, name',
       syncMeta: 'key',
+    })
+    // v2 — offline write queue. `status` indexed so we can list pending vs
+    // failed sales without a scan; `createdAt` for chronological flush order.
+    this.version(2).stores({
+      products: 'id, code, name, is_active',
+      categories: 'id, name',
+      syncMeta: 'key',
+      pendingSales: 'id, status, createdAt',
     })
   }
 }

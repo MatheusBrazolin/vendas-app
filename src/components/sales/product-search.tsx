@@ -5,9 +5,13 @@ import { toast } from 'sonner'
 import { Search, Plus, Minus, ScanBarcode } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
 import { formatCurrency } from '@/lib/utils/format'
 import { useDebounce } from '@/hooks/use-debounce'
+import {
+  searchProducts,
+  getByCode,
+  ensureProductsCached,
+} from '@/lib/offline/products-repo'
 import type { Product, CartItem } from '@/types/database'
 
 interface ProductSearchProps {
@@ -24,30 +28,37 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const debouncedQuery = useDebounce(query, 300)
 
-  // Auto-focus the input on mount so the USB scanner can write directly into it
+  // Auto-focus the input on mount so the USB scanner can write directly into it.
+  // Also warm the local cache so the PDV isn't blank on a fresh first load.
   useEffect(() => {
     inputRef.current?.focus()
+    void ensureProductsCached()
   }, [])
 
-  // Fuzzy search for manual typing (does NOT auto-add — just shows the dropdown)
+  // Fuzzy search for manual typing (does NOT auto-add — just shows the dropdown).
+  // Reads from the offline cache so it works identically online and offline.
   useEffect(() => {
     if (!debouncedQuery.trim()) {
       setResults([])
       return
     }
+    let cancelled = false
     setLoading(true)
-    const supabase = createClient()
-    supabase
-      .from('products')
-      .select('*')
-      .eq('is_active', true)
-      .gt('stock_quantity', 0)
-      .or(`name.ilike.%${debouncedQuery}%,code.ilike.%${debouncedQuery}%`)
-      .limit(10)
-      .then(({ data }) => {
-        setResults(data ?? [])
-        setLoading(false)
+    searchProducts(debouncedQuery)
+      .then((data) => {
+        if (cancelled) return
+        setResults(data)
       })
+      .catch(() => {
+        if (cancelled) return
+        setResults([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [debouncedQuery])
 
   function getQuantity(product: Product): number {
@@ -85,19 +96,15 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
     if (!trimmed) return
 
     setScanning(true)
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('code', trimmed)
-      .eq('is_active', true)
-      .maybeSingle()
-    setScanning(false)
-
-    if (error) {
+    let data: Product | null = null
+    try {
+      data = await getByCode(trimmed)
+    } catch {
+      setScanning(false)
       toast.error('Erro ao buscar produto. Tente novamente.')
       return
     }
+    setScanning(false)
 
     if (!data) {
       toast.error(`Código não encontrado: ${trimmed}`)

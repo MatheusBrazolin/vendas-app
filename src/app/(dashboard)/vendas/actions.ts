@@ -14,33 +14,55 @@ interface CreateSaleInput {
   payment_method: PaymentMethod
   notes: string
   items: SaleItem[]
+  /** Idempotency key for offline sales. Null/omitted for normal online sales. */
+  client_uuid?: string
 }
 
-export async function createSale(input: CreateSaleInput): Promise<{ saleId?: string; error?: string }> {
+/**
+ * Stable error codes returned alongside the user-facing message, so callers
+ * (e.g. the offline flush) can classify failures without parsing translated
+ * strings. `terminal` codes won't succeed on retry; everything else is treated
+ * as transient.
+ */
+export type CreateSaleErrorCode =
+  | 'insufficient_stock'
+  | 'product_not_found'
+  | 'empty_cart'
+  | 'unauthenticated'
+  | 'unknown'
+
+export interface CreateSaleResult {
+  saleId?: string
+  error?: string
+  code?: CreateSaleErrorCode
+}
+
+export async function createSale(input: CreateSaleInput): Promise<CreateSaleResult> {
   const supabase = await createClient()
 
   const { data, error } = await supabase.rpc('create_sale_with_items', {
     p_payment_method: input.payment_method,
     p_notes: input.notes || null,
     p_items: input.items as unknown as Json,
+    p_client_uuid: input.client_uuid ?? null,
   })
 
   if (error) {
     const msg = error.message
     if (msg.includes('insufficient_stock')) {
       const product = msg.split(':')[1]?.trim() ?? 'produto'
-      return { error: `Estoque insuficiente para: ${product}` }
+      return { error: `Estoque insuficiente para: ${product}`, code: 'insufficient_stock' }
     }
     if (msg.includes('product_not_found')) {
-      return { error: 'Produto não encontrado.' }
+      return { error: 'Produto não encontrado.', code: 'product_not_found' }
     }
     if (msg.includes('empty_cart')) {
-      return { error: 'Adicione pelo menos um produto.' }
+      return { error: 'Adicione pelo menos um produto.', code: 'empty_cart' }
     }
     if (msg.includes('unauthenticated')) {
-      return { error: 'Sessão expirada. Faça login novamente.' }
+      return { error: 'Sessão expirada. Faça login novamente.', code: 'unauthenticated' }
     }
-    return { error: error.message }
+    return { error: error.message, code: 'unknown' }
   }
 
   revalidatePath('/vendas')

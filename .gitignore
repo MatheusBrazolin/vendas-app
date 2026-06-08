@@ -20,6 +20,10 @@
 # production
 /build
 
+# electron desktop installer output
+/instalador
+/dist-desktop
+
 # misc
 .DS_Store
 *.pem

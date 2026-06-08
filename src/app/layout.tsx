@@ -61,6 +61,20 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${inter.variable} ${jetBrainsMono.variable} h-full antialiased`}
     >
+      <head>
+        {/*
+          Capture `beforeinstallprompt` as early as possible. Chromium fires it
+          during initial load — often before React mounts — so a listener added
+          inside a component's effect misses it and the install button never
+          appears. We stash the event globally and re-dispatch a custom event
+          the InstallButton can pick up whenever it mounts.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__bip=e;window.dispatchEvent(new Event('bipready'));});window.addEventListener('appinstalled',function(){window.__bip=null;});`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col font-sans">
         {children}
         <Toaster richColors position="top-right" />

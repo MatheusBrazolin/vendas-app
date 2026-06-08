@@ -4,6 +4,8 @@ import { signOut } from '@/app/(auth)/login/actions'
 import { Button } from '@/components/ui/button'
 import { Breadcrumb } from '@/components/layout/breadcrumb'
 import { MobileSidebar } from '@/components/layout/sidebar'
+import { InstallButton } from '@/components/pwa/install-button'
+import { PendingSalesBadge } from '@/components/pwa/pending-sales-badge'
 
 export async function Header() {
   // The Header only renders inside the authenticated dashboard layout, which
@@ -19,6 +21,9 @@ export async function Header() {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <PendingSalesBadge />
+        <InstallButton />
+
         <div className="hidden sm:flex items-center gap-3 pr-3 border-r border-slate-200">
           <div className="text-right leading-tight">
             <p className="text-sm font-medium text-slate-900 truncate max-w-[180px]">

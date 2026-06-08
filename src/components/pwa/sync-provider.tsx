@@ -1,12 +1,17 @@
 'use client'
 
 import { useEffect } from 'react'
+import { toast } from 'sonner'
 import { syncAll } from '@/lib/offline/sync'
+import { flushPendingSales } from '@/lib/offline/sales-repo'
 
 /**
  * Background sync orchestrator. Mounted once in the dashboard layout — only
  * runs for authenticated users (the auth layout doesn't mount it) since the
  * Supabase queries would 401 anyway without a session.
+ *
+ * On each trigger it (1) refreshes the read cache (products/categories) and
+ * (2) flushes any sales queued offline back to the server.
  *
  * Triggers:
  *   - On mount, if the browser is online.
@@ -19,19 +24,40 @@ import { syncAll } from '@/lib/offline/sync'
  */
 export function SyncProvider() {
   useEffect(() => {
-    const run = () => {
+    // Refresh the read cache FIRST, then drain the write queue. Ordering
+    // matters: syncAll rewrites local stock from the server, so running it
+    // after a flush (instead of before) could clobber the authoritative
+    // values the flush just pulled. flushPendingSales re-syncs internally too.
+    const run = async () => {
       if (typeof navigator !== 'undefined' && !navigator.onLine) return
-      syncAll()
-        .then((result) => {
-          // Surface partial failures in dev so they don't fail silently;
-          // production users see no console noise unless they look.
-          if ('error' in result.products || 'error' in result.categories) {
-            console.warn('[sync] partial failure', result)
-          }
-        })
-        .catch((err) => {
-          console.error('[sync] failed', err)
-        })
+
+      try {
+        const result = await syncAll()
+        if ('error' in result.products || 'error' in result.categories) {
+          console.warn('[sync] partial failure', result)
+        }
+      } catch (err) {
+        console.error('[sync] failed', err)
+      }
+
+      try {
+        const { synced, failed } = await flushPendingSales()
+        if (synced > 0) {
+          toast.success(
+            `${synced} ${synced === 1 ? 'venda enviada' : 'vendas enviadas'} ao servidor.`,
+          )
+        }
+        if (failed > 0) {
+          toast.error(
+            `${failed} ${failed === 1 ? 'venda offline foi rejeitada' : 'vendas offline foram rejeitadas'} (ex.: estoque). Revise em Vendas.`,
+          )
+        }
+        if (synced > 0 || failed > 0) {
+          window.dispatchEvent(new Event('pendingsaleschange'))
+        }
+      } catch (err) {
+        console.error('[sync] flush failed', err)
+      }
     }
 
     run()

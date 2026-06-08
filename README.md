@@ -96,6 +96,47 @@ Para deployar a sua própria cópia:
 3. Em **Environment Variables**, adicione `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 4. Deploy
 
+## 💻 App Desktop (Windows)
+
+Além do acesso pelo navegador (que o dono usa no **celular** para acompanhar as
+vendas), há um **app instalável para Windows** — ideal para o caixa/PDV ter um
+funcionamento fixo que continua operando se a internet cair.
+
+É um shell Electron ([`electron/main.cjs`](electron/main.cjs)) que abre a versão
+publicada numa janela própria. Como o Electron embute o Chromium, o **service
+worker e o cache offline** (IndexedDB) funcionam igual ao Chrome: após o primeiro
+acesso online (necessário para logar e cachear), o app continua funcionando sem
+internet, com as vendas enfileiradas localmente e sincronizadas ao reconectar.
+
+```bash
+# Rodar o app desktop em modo dev (abre uma janela; aponta para produção)
+npm run desktop
+
+# Apontar para um servidor local durante o desenvolvimento
+# (PowerShell)  $env:VENDAS_APP_URL="http://localhost:3000"; npm run desktop
+
+# Gerar o instalador → pasta instalador/VendasApp-Instalador-<versão>.exe
+npm run desktop:build
+```
+
+O `npm run desktop:build` cria a pasta **`instalador/`** na raiz do projeto. É ali
+que fica o arquivo de instalação: **`instalador/VendasApp-Instalador-<versão>.exe`**.
+Esse `.exe` é autocontido — copie-o para qualquer PC Windows e dê duplo-clique para
+instalar (não precisa de Node nem nada). A pasta `instalador/` é ignorada pelo git.
+
+> **Login offline:** a autenticação é do Supabase e exige rede. O cenário coberto é
+> "estava logado e a internet caiu" — aí tudo continua funcionando. Um *cold start*
+> totalmente offline (app fechado + sem rede + sessão expirada) exigiria login, que
+> não funciona sem conexão.
+
+> **Build no Windows — erro de symlink:** o `electron-builder` extrai a ferramenta
+> `winCodeSign`, que contém symlinks de macOS e falha sem privilégio
+> (`Cannot create symbolic link`). Soluções: ativar o **Modo de Desenvolvedor** do
+> Windows *(Configurações → Privacidade e segurança → Para desenvolvedores)* **ou**
+> rodar o terminal como **Administrador**, e então `npm run desktop:build`. O
+> instalador gerado é **não-assinado** (o SmartScreen mostra um aviso na 1ª execução
+> → "Mais informações" → "Executar assim mesmo").
+
 ## 📂 Estrutura
 
 ```
@@ -115,16 +156,22 @@ src/
 │   ├── layout/             sidebar (desktop + mobile drawer), header, breadcrumb
 │   ├── products/           formulário com auto-preenchimento por barcode
 │   ├── sales/              busca de produto no PDV, carrinho, cancelar venda
-│   ├── pwa/                registro do Service Worker
+│   ├── pwa/                SW register, botão instalar, indicador offline,
+│   │                        sync provider, badge de vendas pendentes
 │   └── ui/                 primitivos de UI (Base UI)
+├── hooks/                  React hooks (use-debounce)
 ├── lib/
 │   ├── auth/roles.ts       getCurrentUser, requireAdmin, etc.
 │   ├── barcode/lookup.ts   Cosmos → Open Food Facts → UPCitemdb + cache
+│   ├── offline/            cache IndexedDB (Dexie), sync, fila de vendas offline
 │   ├── queries/            consultas tipadas ao Supabase
 │   ├── supabase/           clients de server/client/middleware
-│   ├── utils/              format, debounce, display, receipt
+│   ├── utils/              format, display, receipt
 │   └── validations/        schemas Zod
 └── types/database.ts       tipos gerados a partir do schema
+electron/
+├── main.cjs                shell desktop (Windows) que abre o app publicado
+└── icon.png                ícone do instalador
 public/
 ├── icon-*.png              ícones do PWA (gerados por scripts/generate-pwa-icons.mjs)
 ├── sw.js                   Service Worker
@@ -158,11 +205,13 @@ scripts/
 - [x] PDV com carrinho, métodos de pagamento, validação de campos obrigatórios e calculadora de troco
 - [x] Cancelamento de venda admin-only com restauração atômica de estoque
 - [x] Sidebar responsiva (drawer no mobile)
-- [x] **PWA Fase 1** — instalável no Chrome/Edge/Safari
-- [ ] **PWA Fase 2** — cache de produtos em IndexedDB, leitura offline
-- [ ] **PWA Fase 3** — fila de mutations offline + replay + conflito de estoque
+- [x] **PWA Fase 1** — instalável no Chrome/Edge/Safari + botão "Instalar app"
+- [x] **PWA Fase 2** — cache de produtos em IndexedDB, leitura offline no PDV
+- [x] **PWA Fase 3** — fila de vendas offline + replay idempotente + conflito de estoque
+- [x] **App desktop Windows** — instalável (.exe) via Electron, com offline
 - [ ] Emissão de NFC-e via serviço terceirizado
 - [ ] Relatórios exportáveis (CSV/PDF)
+- [ ] Login offline (sessão em cache) para *cold start* sem internet
 
 ## 📜 Licença
 

@@ -2,12 +2,17 @@
   "name": "vendas-app",
   "version": "0.1.0",
   "private": true,
+  "description": "Sistema de gestão de vendas e estoque — PDV, controle de produtos e fechamento de caixa.",
+  "author": "OTM Tech",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "pwa:icons": "node scripts/generate-pwa-icons.mjs"
+    "pwa:icons": "node scripts/generate-pwa-icons.mjs",
+    "desktop": "electron .",
+    "desktop:build": "electron-builder --win"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -37,7 +42,33 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "electron": "^33.3.0",
+    "electron-builder": "^25.1.8",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "build": {
+    "appId": "br.com.otmtech.vendasapp",
+    "productName": "VendasApp",
+    "directories": {
+      "output": "instalador"
+    },
+    "artifactName": "VendasApp-Instalador-${version}.${ext}",
+    "files": [
+      "electron/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "electron/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "VendasApp"
+    }
   }
 }

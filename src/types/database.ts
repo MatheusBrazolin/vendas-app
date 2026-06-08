@@ -86,6 +86,7 @@ export interface Database {
           notes: string | null
           seller_id: string
           created_at: string
+          client_uuid: string | null
         }
         Insert: {
           id?: string
@@ -94,6 +95,7 @@ export interface Database {
           notes?: string | null
           seller_id: string
           created_at?: string
+          client_uuid?: string | null
         }
         Update: {
           id?: string
@@ -102,6 +104,7 @@ export interface Database {
           notes?: string | null
           seller_id?: string
           created_at?: string
+          client_uuid?: string | null
         }
         Relationships: []
       }
@@ -227,6 +230,7 @@ export interface Database {
           p_payment_method: PaymentMethod
           p_notes: string | null
           p_items: Json
+          p_client_uuid?: string | null
         }
         Returns: string
       }

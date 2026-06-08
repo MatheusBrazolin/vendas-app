@@ -11,6 +11,8 @@ import {
   Receipt,
   CreditCard,
   Banknote,
+  CloudOff,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -27,8 +29,16 @@ import { Textarea } from '@/components/ui/textarea'
 import { ProductSearch } from '@/components/sales/product-search'
 import { Cart } from '@/components/sales/cart'
 import { createSale } from '../actions'
+import { queueSale } from '@/lib/offline/sales-repo'
 import { formatCurrency } from '@/lib/utils/format'
 import type { CartItem, PaymentMethod } from '@/types/database'
+
+/** Snapshot of a sale saved offline, for the provisional confirmation banner. */
+interface OfflineSaleConfirmation {
+  items: { name: string; quantity: number; unit_price: number }[]
+  total: number
+  paymentLabel: string
+}
 
 const PAYMENT_OPTIONS: { value: PaymentMethod; label: string }[] = [
   { value: 'cash', label: 'Dinheiro' },
@@ -43,6 +53,8 @@ export function PDV() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('')
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // Set after a sale is saved offline — drives the provisional receipt banner.
+  const [offlineSale, setOfflineSale] = useState<OfflineSaleConfirmation | null>(null)
   // Track whether the user has tried to confirm the sale at least once.
   // Used to show validation feedback (red border, error message) only AFTER
   // the first attempt, so a fresh form doesn't look like it's already in error.
@@ -118,24 +130,93 @@ export function PDV() {
 
     setIsSubmitting(true)
 
-    const result = await createSale({
-      payment_method: paymentMethod,
-      notes,
-      items: cartItems.map((item) => ({
-        product_id: item.product.id,
-        quantity: item.quantity,
-      })),
-    })
+    // One UUID per sale: used as the server's idempotency key so a queued sale
+    // flushed after a flaky reconnect is never inserted twice.
+    const clientUuid = crypto.randomUUID()
+    const rpcItems = cartItems.map((item) => ({
+      product_id: item.product.id,
+      quantity: item.quantity,
+    }))
 
-    setIsSubmitting(false)
+    // `finally` guarantees the button is re-enabled no matter which path (or
+    // unexpected throw) we take, so a sale can never lock the PDV.
+    try {
+      // Offline → straight to the local queue, no server round-trip.
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        await saveOffline(clientUuid)
+        return
+      }
 
-    if (result.error) {
-      toast.error(result.error)
+      // Online → try the server. A network failure mid-request (action throws)
+      // falls back to the queue; a business rejection (e.g. stock) is shown as-is.
+      try {
+        const result = await createSale({
+          payment_method: paymentMethod,
+          notes,
+          items: rpcItems,
+          client_uuid: clientUuid,
+        })
+
+        if (result.error) {
+          toast.error(result.error)
+          return
+        }
+
+        toast.success('Venda registrada com sucesso!')
+        router.push(`/vendas/${result.saleId}`)
+      } catch {
+        // Lost connection while submitting — don't drop the sale, queue it.
+        await saveOffline(clientUuid)
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  /** Persist the current cart as an offline sale and show the confirmation. */
+  async function saveOffline(clientUuid: string) {
+    if (!paymentMethod) return
+    try {
+      await queueSale({
+        client_uuid: clientUuid,
+        payment_method: paymentMethod,
+        notes,
+        total,
+        items: cartItems.map((item) => ({
+          product_id: item.product.id,
+          quantity: item.quantity,
+          name: item.product.name,
+          unit_price: item.product.sale_price,
+        })),
+      })
+    } catch {
+      toast.error('Não foi possível salvar a venda offline.')
       return
     }
 
-    toast.success('Venda registrada com sucesso!')
-    router.push(`/vendas/${result.saleId}`)
+    const confirmation: OfflineSaleConfirmation = {
+      total,
+      paymentLabel:
+        PAYMENT_OPTIONS.find((o) => o.value === paymentMethod)?.label ?? paymentMethod,
+      items: cartItems.map((item) => ({
+        name: item.product.name,
+        quantity: item.quantity,
+        unit_price: item.product.sale_price,
+      })),
+    }
+
+    resetForm()
+    setOfflineSale(confirmation)
+    toast.success('Venda salva offline — será enviada ao reconectar.')
+  }
+
+  /** Clear the form for the next sale. */
+  function resetForm() {
+    setCartItems([])
+    setPaymentMethod('')
+    setNotes('')
+    setCashReceivedRaw('')
+    setTriedSubmit(false)
   }
 
   // Keep the button clickable when the payment method is missing so the user
@@ -144,7 +225,45 @@ export function PDV() {
   const canSubmit = !isSubmitting && cartItems.length > 0
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <div className="space-y-4">
+      {offlineSale && (
+        <div className="relative rounded-xl border border-amber-300 bg-amber-50 p-4 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setOfflineSale(null)}
+            aria-label="Fechar"
+            className="absolute right-3 top-3 text-amber-500 hover:text-amber-700"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <div className="flex items-center gap-2 text-amber-900">
+            <CloudOff className="h-5 w-5" />
+            <p className="font-semibold">Venda salva offline</p>
+          </div>
+          <p className="mt-1 text-sm text-amber-800">
+            Recibo provisório — será enviada ao servidor automaticamente quando a
+            conexão voltar.
+          </p>
+          <div className="mt-3 rounded-lg bg-white/70 border border-amber-200 divide-y divide-amber-100 text-sm">
+            {offlineSale.items.map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between px-3 py-1.5">
+                <span className="text-slate-700">
+                  {item.quantity}× {item.name}
+                </span>
+                <span className="tabular-nums text-slate-600">
+                  {formatCurrency(item.unit_price * item.quantity)}
+                </span>
+              </div>
+            ))}
+            <div className="flex items-center justify-between px-3 py-2 font-semibold text-slate-900">
+              <span>Total · {offlineSale.paymentLabel}</span>
+              <span className="tabular-nums">{formatCurrency(offlineSale.total)}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
       <div className="lg:col-span-2 space-y-4">
         <Card className="border-slate-200/80 shadow-sm">
           <CardHeader className="pb-3">
@@ -360,6 +479,7 @@ export function PDV() {
             )}
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   )

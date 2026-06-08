@@ -18,6 +18,25 @@ export function ServiceWorkerRegister() {
     if (typeof window === 'undefined') return
     if (!('serviceWorker' in navigator)) return
 
+    // The SW must NOT run in development: it caches chunks/RSC payloads, and
+    // Turbopack/HMR serve fresh-but-same-URL assets constantly — a cached copy
+    // corrupts the React Server Components stream (e.g. "enqueueModel is not a
+    // function", "Connection closed"). Unregister any leftover SW and drop our
+    // caches so a dev session is always clean.
+    if (process.env.NODE_ENV !== 'production') {
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        regs.forEach((r) => r.unregister())
+      })
+      if (window.caches) {
+        caches.keys().then((keys) =>
+          keys.forEach((k) => {
+            if (k.startsWith('vendasapp-')) caches.delete(k)
+          }),
+        )
+      }
+      return
+    }
+
     const register = () => {
       navigator.serviceWorker
         .register('/sw.js', { scope: '/', updateViaCache: 'none' })
