@@ -3,9 +3,11 @@
 import { useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import {
   ArrowLeft,
   CalendarDays,
+  FileDown,
   Printer,
   TrendingUp,
   Receipt,
@@ -68,7 +70,34 @@ export function CashCloseView({ summary }: CashCloseViewProps) {
     startTransition(() => router.push(`/vendas/fechamento?${params.toString()}`))
   }
 
-  function handlePrint() {
+  // In the desktop shell, prefer the native Windows print dialog (full
+  // printer list) and the native "save as" flow for PDFs. On the web,
+  // `window.vendasDesktop` is undefined and we fall back to `window.print()`
+  // — users can still pick "Microsoft Print to PDF" from the browser dialog.
+  async function handlePrint() {
+    const bridge = typeof window !== 'undefined' ? window.vendasDesktop : undefined
+    if (bridge) {
+      const result = await bridge.print()
+      if (!result.ok && result.reason === 'error') {
+        toast.error('Não foi possível imprimir. Tente novamente.')
+      }
+      return
+    }
+    window.print()
+  }
+
+  async function handleSavePdf() {
+    const bridge = typeof window !== 'undefined' ? window.vendasDesktop : undefined
+    if (bridge) {
+      const result = await bridge.savePdf({ suggestedName: `fechamento-${summary.date}.pdf` })
+      if (result.ok) {
+        toast.success('PDF salvo com sucesso.')
+      } else if (result.reason === 'error') {
+        toast.error('Não foi possível salvar o PDF.')
+      }
+      return
+    }
+    toast.info('No diálogo de impressão, escolha "Salvar como PDF" ou "Microsoft Print to PDF".')
     window.print()
   }
 
@@ -133,6 +162,14 @@ export function CashCloseView({ summary }: CashCloseViewProps) {
                 className="h-10 pl-9 pr-3 border border-slate-200 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/15 focus:border-blue-600"
               />
             </div>
+            <Button
+              onClick={handleSavePdf}
+              variant="outline"
+              className="border-slate-200 text-slate-700 hover:bg-slate-50"
+            >
+              <FileDown className="mr-1.5 h-4 w-4" />
+              Salvar PDF
+            </Button>
             <Button
               onClick={handlePrint}
               className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
