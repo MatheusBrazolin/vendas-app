@@ -25,15 +25,22 @@ describe('formatCurrency', () => {
 })
 
 describe('formatDate', () => {
-  it('formats a date as dd/MM/yyyy às HH:mm (local time)', () => {
-    // Numeric constructor = unambiguous local time, so the result is
-    // timezone-independent for this assertion.
-    const date = new Date(2026, 5, 8, 14, 30) // 08/06/2026 14:30
-    expect(formatDate(date)).toBe('08/06/2026 às 14:30')
+  // formatDate always renders in BRT (America/Sao_Paulo) regardless of where
+  // the code runs — CI is UTC, dev machines vary. Use absolute timestamps
+  // (with explicit offset) so the expectation is the same everywhere.
+  it('formats a BRT timestamp as dd/MM/yyyy às HH:mm', () => {
+    expect(formatDate('2026-06-08T14:30:00-03:00')).toBe('08/06/2026 às 14:30')
   })
 
-  it('accepts an ISO string', () => {
-    expect(formatDate('2026-01-05T09:05:00')).toBe('05/01/2026 às 09:05')
+  it('converts a UTC instant to BRT before formatting', () => {
+    // 09:05 UTC = 06:05 BRT
+    expect(formatDate('2026-01-05T09:05:00Z')).toBe('05/01/2026 às 06:05')
+  })
+
+  it('ignores the machine TZ — a late-evening BRT timestamp does not roll over', () => {
+    // The whole reason this helper exists: at 22:00 BRT it is already the
+    // next day in UTC, but the operator-facing string must still say 08/06.
+    expect(formatDate('2026-06-08T22:00:00-03:00')).toBe('08/06/2026 às 22:00')
   })
 })
 

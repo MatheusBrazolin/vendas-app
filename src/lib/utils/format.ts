@@ -1,5 +1,6 @@
-import { format, formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { formatBRDateTime } from '@/lib/utils/datetime'
 
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat('pt-BR', {
@@ -8,8 +9,9 @@ export function formatCurrency(value: number): string {
   }).format(value)
 }
 
+// Always in BRT — same reasoning as the dashboard/cash-close helpers.
 export function formatDate(date: string | Date): string {
-  return format(new Date(date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+  return formatBRDateTime(date)
 }
 
 export function formatRelative(date: string | Date): string {

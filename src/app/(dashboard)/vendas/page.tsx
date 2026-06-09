@@ -173,19 +173,21 @@ export default async function VendasPage({
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-slate-100">
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 h-11">
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 h-11">
                   Data
                 </TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 text-right">
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 text-right">
                   Total
                 </TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                {/* Pagamento e Observações somem em telas estreitas pra
+                    deixar Data / Total / Ações respiráveis no iPhone. */}
+                <TableHead className="hidden sm:table-cell text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Pagamento
                 </TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <TableHead className="hidden md:table-cell text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Observações
                 </TableHead>
-                <TableHead className="w-32 text-right pr-6 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <TableHead className="w-24 sm:w-32 text-right pr-3 sm:pr-6 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Ações
                 </TableHead>
               </TableRow>
@@ -226,18 +228,23 @@ export default async function VendasPage({
                     }`}
                   >
                     <TableCell className="text-sm text-slate-600 tabular-nums">
-                      {formatDate(sale.created_at)}
+                      <div>{formatDate(sale.created_at)}</div>
+                      {/* Em mobile (onde Pagamento some), mostramos o badge
+                          aqui embaixo da data pra não perder a informação. */}
+                      <div className="sm:hidden mt-1">
+                        <PaymentBadge method={sale.payment_method as PaymentMethod} />
+                      </div>
                     </TableCell>
                     <TableCell className="text-right font-semibold text-slate-900 tabular-nums">
                       {formatCurrency(sale.total_amount)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <PaymentBadge method={sale.payment_method as PaymentMethod} />
                     </TableCell>
-                    <TableCell className="text-sm text-slate-500 truncate max-w-xs">
+                    <TableCell className="hidden md:table-cell text-sm text-slate-500 truncate max-w-xs">
                       {sale.notes || <span className="text-slate-300">—</span>}
                     </TableCell>
-                    <TableCell className="text-right pr-6">
+                    <TableCell className="text-right pr-3 sm:pr-6">
                       <div className="inline-flex items-center gap-1">
                         <Button
                           variant="ghost"

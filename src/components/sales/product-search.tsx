@@ -198,16 +198,19 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                {/* No mobile o bloco vira coluna do pai (flex-col) e os
+                    controles ocupam toda a largura do card — botão "Adicionar"
+                    grande, fácil de tocar. No desktop fica compacto na lateral. */}
+                <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
                   <div className="inline-flex items-center rounded-md border border-slate-200 overflow-hidden">
                     <button
                       type="button"
                       onClick={() => setQuantity(product, qty - 1)}
                       disabled={qty <= 1}
-                      className="h-8 w-8 inline-flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      className="h-9 w-9 inline-flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       aria-label="Diminuir quantidade"
                     >
-                      <Minus className="h-3.5 w-3.5" />
+                      <Minus className="h-4 w-4" />
                     </button>
                     <input
                       type="number"
@@ -218,26 +221,26 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
                         setQuantity(product, parseInt(e.target.value, 10) || 1)
                       }
                       onFocus={(e) => e.currentTarget.select()}
-                      className="w-12 h-8 text-center text-sm font-medium tabular-nums bg-white border-x border-slate-200 focus:outline-none focus:bg-blue-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-12 h-9 text-center text-sm font-medium tabular-nums bg-white border-x border-slate-200 focus:outline-none focus:bg-blue-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       aria-label="Quantidade"
                     />
                     <button
                       type="button"
                       onClick={() => setQuantity(product, qty + 1)}
                       disabled={qty >= product.stock_quantity}
-                      className="h-8 w-8 inline-flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      className="h-9 w-9 inline-flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       aria-label="Aumentar quantidade"
                     >
-                      <Plus className="h-3.5 w-3.5" />
+                      <Plus className="h-4 w-4" />
                     </button>
                   </div>
 
                   <Button
                     size="sm"
-                    className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
+                    className="flex-1 sm:flex-initial h-9 bg-green-600 hover:bg-green-700 text-white shadow-sm"
                     onClick={() => handleAdd(product, qty)}
                   >
-                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    <Plus className="h-4 w-4 mr-1" />
                     Adicionar
                   </Button>
                 </div>

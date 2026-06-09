@@ -277,16 +277,18 @@ export function CashCloseView({ summary }: CashCloseViewProps) {
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-slate-100">
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 h-11 pl-6 w-20">
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 h-11 pl-3 sm:pl-6 w-16 sm:w-20">
                     Hora
                   </TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 w-36">
+                  {/* "Pagamento" some no mobile — o badge aparece embaixo
+                      da hora pra economizar largura. */}
+                  <TableHead className="hidden sm:table-cell text-xs font-semibold uppercase tracking-wide text-slate-500 w-36">
                     Pagamento
                   </TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                     Itens
                   </TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 text-right pr-6 w-32">
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 text-right pr-3 sm:pr-6 w-24 sm:w-32">
                     Total
                   </TableHead>
                 </TableRow>
@@ -303,10 +305,18 @@ export function CashCloseView({ summary }: CashCloseViewProps) {
                     const style = PAYMENT_STYLES[sale.payment_method]
                     return (
                       <TableRow key={sale.id} className="border-slate-100 align-top">
-                        <TableCell className="pl-6 pt-3 text-sm text-slate-600 tabular-nums">
-                          {format(new Date(sale.created_at), 'HH:mm')}
+                        <TableCell className="pl-3 sm:pl-6 pt-3 text-sm text-slate-600 tabular-nums">
+                          <div>{format(new Date(sale.created_at), 'HH:mm')}</div>
+                          <div className="sm:hidden mt-1">
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium ${style.badge}`}
+                            >
+                              <span className={`h-1 w-1 rounded-full ${style.dot}`} />
+                              {PAYMENT_LABELS[sale.payment_method]}
+                            </span>
+                          </div>
                         </TableCell>
-                        <TableCell className="pt-3">
+                        <TableCell className="hidden sm:table-cell pt-3">
                           <span
                             className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ${style.badge}`}
                           >
@@ -317,7 +327,7 @@ export function CashCloseView({ summary }: CashCloseViewProps) {
                         <TableCell className="py-3">
                           <ItemsList items={sale.items} notes={sale.notes} />
                         </TableCell>
-                        <TableCell className="text-right pr-6 pt-3 font-semibold text-slate-900 tabular-nums">
+                        <TableCell className="text-right pr-3 sm:pr-6 pt-3 font-semibold text-slate-900 tabular-nums">
                           {formatCurrency(sale.total_amount)}
                         </TableCell>
                       </TableRow>

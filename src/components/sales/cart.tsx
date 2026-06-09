@@ -40,35 +40,38 @@ export function Cart({ items, onUpdateQty, onRemove }: CartProps) {
             </p>
           </div>
 
+          {/* h-9 (36px) é o mínimo pra toque confortável em dedo de iPhone
+              sem virar gigante no desktop. Antes (h-7 = 28px) era difícil
+              de acertar com o polegar. */}
           <div className="flex items-center gap-1 shrink-0">
             <Button
               variant="outline"
               size="icon"
-              className="h-7 w-7"
+              className="h-9 w-9"
               onClick={() => onUpdateQty(item.product.id, item.quantity - 1)}
               disabled={item.quantity <= 1}
             >
-              <Minus className="h-3 w-3" />
+              <Minus className="h-4 w-4" />
             </Button>
-            <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+            <span className="w-8 text-center text-sm font-medium tabular-nums">{item.quantity}</span>
             <Button
               variant="outline"
               size="icon"
-              className="h-7 w-7"
+              className="h-9 w-9"
               onClick={() => onUpdateQty(item.product.id, item.quantity + 1)}
               disabled={item.quantity >= item.product.stock_quantity}
             >
-              <Plus className="h-3 w-3" />
+              <Plus className="h-4 w-4" />
             </Button>
           </div>
 
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 shrink-0"
+            className="h-9 w-9 text-red-400 hover:text-red-600 hover:bg-red-50 shrink-0"
             onClick={() => onRemove(item.product.id)}
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       ))}

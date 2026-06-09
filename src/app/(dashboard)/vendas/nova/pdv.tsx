@@ -225,7 +225,9 @@ export function PDV() {
   const canSubmit = !isSubmitting && cartItems.length > 0
 
   return (
-    <div className="space-y-4">
+    // pb-24 no mobile: garante que o conteúdo final do scroll não fique
+    // escondido atrás da barra sticky de checkout (que mede ~80px).
+    <div className="space-y-4 pb-24 lg:pb-0">
       {offlineSale && (
         <div className="relative rounded-xl border border-amber-300 bg-amber-50 p-4 shadow-sm">
           <button
@@ -395,33 +397,23 @@ export function PDV() {
                 </div>
 
                 {hasCashEntered && (
+                  // Destaque grande do troco — o dono da loja pediu pra ser
+                  // bem visível porque o operador precisa bater o olho e ver
+                  // imediatamente quanto devolver. Fundo cheio (não translúcido)
+                  // com cor vívida, valor em 4xl, label em caixa alta acima.
                   <div
                     className={
                       cashShort
-                        ? 'rounded-md bg-red-50 border border-red-200 px-3 py-2'
-                        : 'rounded-md bg-emerald-100/60 border border-emerald-300 px-3 py-2'
+                        ? 'rounded-xl bg-red-600 px-4 py-4 shadow-md shadow-red-900/10 text-white'
+                        : 'rounded-xl bg-emerald-600 px-4 py-4 shadow-md shadow-emerald-900/10 text-white'
                     }
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span
-                        className={
-                          cashShort
-                            ? 'text-xs font-medium text-red-700'
-                            : 'text-xs font-medium text-emerald-900'
-                        }
-                      >
-                        {cashShort ? 'Falta receber' : 'Troco'}
-                      </span>
-                      <span
-                        className={
-                          cashShort
-                            ? 'text-lg font-bold tabular-nums text-red-700'
-                            : 'text-lg font-bold tabular-nums text-emerald-900'
-                        }
-                      >
-                        {formatCurrency(Math.abs(change))}
-                      </span>
-                    </div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider opacity-90">
+                      {cashShort ? 'Falta receber' : 'Troco a devolver'}
+                    </p>
+                    <p className="text-4xl font-bold tabular-nums leading-tight mt-1">
+                      {formatCurrency(Math.abs(change))}
+                    </p>
                   </div>
                 )}
               </div>
@@ -481,6 +473,45 @@ export function PDV() {
         </Card>
       </div>
       </div>
+
+      {/* Barra fixa de checkout (mobile only).
+          O painel "Finalizar venda" do lado direito vira sticky no desktop
+          (lg:sticky), mas no mobile fica longe — operador precisa scrollar
+          muito pra confirmar. Esta barra mostra Total + Confirmar sempre
+          visível embaixo. Reusa o mesmo handleSubmit, então toda a
+          validação (carrinho vazio, método faltando, cash short) continua
+          valendo e os toasts/erros aparecem normalmente. */}
+      {cartItems.length > 0 && (
+        <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 px-4 py-3 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.08)]">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] text-slate-500 leading-tight">
+                {itemCount} {itemCount === 1 ? 'item' : 'itens'}
+              </p>
+              <p className="text-lg font-bold tabular-nums text-slate-900 leading-tight">
+                {formatCurrency(total)}
+              </p>
+            </div>
+            <Button
+              className="h-12 px-6 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold shadow-sm disabled:opacity-50 transition-colors"
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="mr-2 h-5 w-5" />
+                  Confirmar
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

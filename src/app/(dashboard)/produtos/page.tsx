@@ -177,25 +177,30 @@ export default async function ProdutosPage({
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-slate-100">
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 h-11">
+                {/* Mobile (default): Código, Produto, Venda, Estoque, Ações.
+                    md (≥768px): + Categoria.
+                    lg (≥1024px): + Custo + Margem.
+                    O código fica escondido no telefone pra dar espaço ao nome
+                    do produto (mais útil pro operador). */}
+                <TableHead className="hidden sm:table-cell text-xs font-semibold uppercase tracking-wide text-slate-500 h-11">
                   Código
                 </TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Produto
                 </TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <TableHead className="hidden md:table-cell text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Categoria
                 </TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 text-right">
+                <TableHead className="hidden lg:table-cell text-xs font-semibold uppercase tracking-wide text-slate-500 text-right">
                   Custo
                 </TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 text-right">
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 text-right">
                   Venda
                 </TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 text-right">
+                <TableHead className="hidden lg:table-cell text-xs font-semibold uppercase tracking-wide text-slate-500 text-right">
                   Margem
                 </TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 text-center">
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 text-center">
                   Estoque
                 </TableHead>
                 <TableHead className="w-12" />
@@ -238,13 +243,18 @@ export default async function ProdutosPage({
                         idx % 2 === 1 ? 'bg-slate-50/30' : ''
                       }`}
                     >
-                      <TableCell className="font-mono text-xs text-slate-500">
+                      <TableCell className="hidden sm:table-cell font-mono text-xs text-slate-500">
                         {product.code}
                       </TableCell>
                       <TableCell className="font-medium text-slate-900">
                         {product.name}
+                        {/* No mobile (sem coluna Código) mostramos o código
+                            embaixo do nome em fonte menor. */}
+                        <span className="sm:hidden block font-mono text-[11px] text-slate-400 mt-0.5">
+                          {product.code}
+                        </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         {product.categories ? (
                           <Badge
                             variant="secondary"
@@ -256,13 +266,13 @@ export default async function ProdutosPage({
                           <span className="text-slate-300 text-sm">—</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-right text-slate-500 tabular-nums">
+                      <TableCell className="hidden lg:table-cell text-right text-slate-500 tabular-nums">
                         {formatCurrency(product.cost_price)}
                       </TableCell>
                       <TableCell className="text-right font-medium text-slate-900 tabular-nums">
                         {formatCurrency(product.sale_price)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">
+                      <TableCell className="hidden lg:table-cell text-right tabular-nums">
                         {margin ? (
                           <span
                             className={
