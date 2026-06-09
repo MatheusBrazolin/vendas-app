@@ -16,7 +16,8 @@
  *   set VENDAS_APP_URL=http://localhost:3000 && npm run desktop
  */
 
-const { app, BrowserWindow, shell } = require('electron')
+const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron')
+const fs = require('node:fs/promises')
 const path = require('node:path')
 
 const APP_URL = process.env.VENDAS_APP_URL || 'https://vendas-app-topaz.vercel.app'
@@ -45,6 +46,7 @@ function createWindow() {
       // Lock down the renderer — we load remote content, so no Node access.
       contextIsolation: true,
       nodeIntegration: false,
+      preload: path.join(__dirname, 'preload.cjs'),
     },
   })
 
@@ -78,6 +80,40 @@ app.on('second-instance', () => {
   if (mainWindow) {
     if (mainWindow.isMinimized()) mainWindow.restore()
     mainWindow.focus()
+  }
+})
+
+// Native print + PDF bridge for the cash-close report. The renderer exposes
+// these via `window.vendasDesktop` (see preload.cjs).
+ipcMain.handle('desktop:print', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  if (!win) return { ok: false, reason: 'error', error: 'no-window' }
+  return await new Promise((resolve) => {
+    win.webContents.print({ silent: false, printBackground: true }, (success, failure) => {
+      if (success) resolve({ ok: true })
+      else resolve({ ok: false, reason: failure === 'cancelled' ? 'canceled' : 'error', error: failure })
+    })
+  })
+})
+
+ipcMain.handle('desktop:save-pdf', async (event, opts) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  if (!win) return { ok: false, reason: 'error', error: 'no-window' }
+
+  const suggested = (opts && opts.suggestedName) || 'fechamento.pdf'
+  const { canceled, filePath } = await dialog.showSaveDialog(win, {
+    title: 'Salvar PDF',
+    defaultPath: suggested,
+    filters: [{ name: 'PDF', extensions: ['pdf'] }],
+  })
+  if (canceled || !filePath) return { ok: false, reason: 'canceled' }
+
+  try {
+    const buffer = await win.webContents.printToPDF({ printBackground: true })
+    await fs.writeFile(filePath, buffer)
+    return { ok: true, path: filePath }
+  } catch (err) {
+    return { ok: false, reason: 'error', error: err instanceof Error ? err.message : String(err) }
   }
 })
 

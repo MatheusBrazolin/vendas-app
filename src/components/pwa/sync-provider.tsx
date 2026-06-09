@@ -18,10 +18,14 @@ import { flushPendingSales } from '@/lib/offline/sales-repo'
  *   - On the `online` event, when the user transitions from offline → online.
  *   - On `visibilitychange`, when the user refocuses the tab/PWA after it
  *     was in the background (cheap way to keep long-running PWAs fresh).
+ *   - On a periodic interval, so the Electron desktop shell (which keeps a
+ *     single window focused for hours) still picks up stock changes made
+ *     from other devices/sessions.
  *
  * All failures are swallowed and logged — sync is best-effort and the app
  * must keep working when it can't talk to Supabase.
  */
+const PERIODIC_SYNC_MS = 60_000
 export function SyncProvider() {
   useEffect(() => {
     // Refresh the read cache FIRST, then drain the write queue. Ordering
@@ -68,9 +72,11 @@ export function SyncProvider() {
     }
     window.addEventListener('online', onOnline)
     document.addEventListener('visibilitychange', onVisible)
+    const interval = window.setInterval(run, PERIODIC_SYNC_MS)
     return () => {
       window.removeEventListener('online', onOnline)
       document.removeEventListener('visibilitychange', onVisible)
+      window.clearInterval(interval)
     }
   }, [])
 
