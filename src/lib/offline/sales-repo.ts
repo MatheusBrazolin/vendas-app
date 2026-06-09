@@ -152,12 +152,11 @@ export async function flushPendingSales(): Promise<{ synced: number; failed: num
       }
     }
 
-    if (synced > 0 || failed > 0) {
-      // A success decremented server stock; a terminal failure means our
-      // earlier optimistic local decrement was wrong. Either way, pull the
-      // authoritative stock so the cache matches the server.
-      await syncProducts().catch(() => {})
-    }
+    // Always pull authoritative stock after a flush attempt — even when the
+    // queue was empty. Other devices/sessions may have changed stock since
+    // the last refresh, and the Electron shell doesn't fire `online` /
+    // `visibilitychange` often enough to keep the cache fresh on its own.
+    await syncProducts().catch(() => {})
   } finally {
     flushing = false
   }
