@@ -1,6 +1,7 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { brDayRangeUTC, todayBRISO } from '@/lib/utils/datetime'
-import type { PaymentMethod } from '@/types/database'
+import type { Database, PaymentMethod } from '@/types/database'
 
 export interface PaymentBreakdown {
   method: PaymentMethod
@@ -64,15 +65,22 @@ interface RawSale {
 /**
  * Aggregate all sales for a single local-day window (00:00 → 23:59:59.999),
  * including each sale's line items (product, quantity, prices).
+ *
+ * Pass an explicit `client` (e.g. the service-role client) for contexts that
+ * have no user session — like the daily-report cron. Defaults to the
+ * cookie-based server client used by the cash-close page.
  */
-export async function getCashClose(localDate: string): Promise<CashCloseSummary> {
+export async function getCashClose(
+  localDate: string,
+  client?: SupabaseClient<Database>,
+): Promise<CashCloseSummary> {
   // localDate is the BRT calendar day the operator picked. Translate that
   // into the UTC instants that bound the day in São Paulo so the query
   // catches sales rung up after 21:00 local (which are already "tomorrow"
   // in UTC).
   const { start, end } = brDayRangeUTC(localDate)
 
-  const supabase = await createClient()
+  const supabase = client ?? (await createClient())
   const { data, error } = await supabase
     .from('sales')
     .select(

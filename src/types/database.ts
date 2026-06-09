@@ -195,6 +195,27 @@ export interface Database {
         }
         Relationships: []
       }
+      report_recipients: {
+        Row: {
+          id: string
+          email: string
+          active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          active?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       barcode_cache: {
         Row: {
           code: string

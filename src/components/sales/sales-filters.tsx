@@ -10,6 +10,11 @@ interface SalesFiltersProps {
   /** YYYY-MM-DD em BRT. "" quando não há filtro. */
   day: string
   hasFilters: boolean
+  /**
+   * Quando true (funcionário), o seletor de data some e mostramos só um
+   * rótulo "Apenas hoje" — o servidor já trava o dia, isto é só a UI.
+   */
+  lockedDay?: boolean
 }
 
 /**
@@ -21,7 +26,12 @@ interface SalesFiltersProps {
  * escolhe uma data e vê só as vendas daquele dia. Sem vendas no dia
  * = lista vazia, comportamento previsível.
  */
-export function SalesFilters({ payment, day, hasFilters }: SalesFiltersProps) {
+export function SalesFilters({
+  payment,
+  day,
+  hasFilters,
+  lockedDay = false,
+}: SalesFiltersProps) {
   const router = useRouter()
   const sp = useSearchParams()
   const [isPending, startTransition] = useTransition()
@@ -62,14 +72,21 @@ export function SalesFilters({ payment, day, hasFilters }: SalesFiltersProps) {
           <label className="block text-[11px] font-medium text-slate-500 mb-1">
             Dia
           </label>
-          <input
-            type="date"
-            value={day}
-            onChange={(e) => update('day', e.target.value)}
-            disabled={isPending}
-            className="w-full h-10 px-3 border border-slate-200 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/15 focus:border-blue-600 disabled:opacity-60"
-            aria-label="Filtrar por dia"
-          />
+          {lockedDay ? (
+            // Funcionário: data travada em hoje, sem seletor.
+            <div className="w-full h-10 px-3 border border-slate-200 rounded-md text-sm bg-slate-50 text-slate-500 flex items-center">
+              Apenas hoje
+            </div>
+          ) : (
+            <input
+              type="date"
+              value={day}
+              onChange={(e) => update('day', e.target.value)}
+              disabled={isPending}
+              className="w-full h-10 px-3 border border-slate-200 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/15 focus:border-blue-600 disabled:opacity-60"
+              aria-label="Filtrar por dia"
+            />
+          )}
         </div>
       </div>
 

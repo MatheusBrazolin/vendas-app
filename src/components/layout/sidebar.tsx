@@ -10,6 +10,7 @@ import {
   Tags,
   ShoppingBag,
   Users,
+  Mail,
   MonitorDown,
   Menu,
   type LucideIcon,
@@ -51,6 +52,12 @@ const navSections: NavSection[] = [
     title: 'Administração',
     items: [
       { href: '/configuracoes/usuarios', label: 'Usuários', icon: Users, adminOnly: true },
+      {
+        href: '/configuracoes/relatorio',
+        label: 'Relatório por email',
+        icon: Mail,
+        adminOnly: true,
+      },
       { href: '/configuracoes/baixar', label: 'Baixar app', icon: MonitorDown, adminOnly: true },
     ],
   },

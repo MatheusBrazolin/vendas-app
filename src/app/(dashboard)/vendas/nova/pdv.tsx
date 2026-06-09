@@ -12,6 +12,7 @@ import {
   CreditCard,
   Banknote,
   CloudOff,
+  Printer,
   X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -31,6 +32,7 @@ import { Cart } from '@/components/sales/cart'
 import { createSale } from '../actions'
 import { queueSale } from '@/lib/offline/sales-repo'
 import { formatCurrency } from '@/lib/utils/format'
+import { printReceipt } from '@/lib/utils/print-receipt'
 import type { CartItem, PaymentMethod } from '@/types/database'
 
 /** Snapshot of a sale saved offline, for the provisional confirmation banner. */
@@ -210,6 +212,20 @@ export function PDV() {
     toast.success('Venda salva offline — será enviada ao reconectar.')
   }
 
+  /** Print the provisional 80mm receipt for the offline sale on screen. */
+  function handlePrintOffline() {
+    if (!offlineSale) return
+    const ok = printReceipt({
+      items: offlineSale.items,
+      total: offlineSale.total,
+      paymentLabel: offlineSale.paymentLabel,
+      provisional: true,
+    })
+    if (!ok) {
+      toast.error('Não foi possível abrir a impressão. Verifique o bloqueador de pop-ups.')
+    }
+  }
+
   /** Clear the form for the next sale. */
   function resetForm() {
     setCartItems([])
@@ -262,6 +278,14 @@ export function PDV() {
               <span className="tabular-nums">{formatCurrency(offlineSale.total)}</span>
             </div>
           </div>
+          <Button
+            onClick={handlePrintOffline}
+            variant="outline"
+            className="mt-3 border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
+          >
+            <Printer className="h-4 w-4 mr-1.5" />
+            Imprimir recibo
+          </Button>
         </div>
       )}
 

@@ -25,6 +25,7 @@ PDV de balcão para pequenos comércios: leitor USB de código de barras, baixa 
 - [Rodando localmente](#-rodando-localmente)
 - [Deploy](#-deploy)
 - [App Desktop (Windows)](#-app-desktop-windows)
+- [Relatório diário por email](#-relatório-diário-por-email)
 - [Como o offline funciona](#-como-o-offline-funciona)
 - [Estrutura](#-estrutura)
 - [Testes](#-testes)
@@ -37,11 +38,13 @@ PDV de balcão para pequenos comércios: leitor USB de código de barras, baixa 
 
 - **PDV (Ponto de Venda)** com leitor USB, busca inteligente por nome ou código, carrinho com ajuste de quantidade, métodos de pagamento (Dinheiro, PIX, Crédito, Débito) e **calculadora de troco** automática quando o pagamento é em dinheiro.
 - **Cadastro de produtos** com auto-preenchimento via código de barras: ao escanear um EAN/UPC, busca nome e descrição em [Cosmos (Bluesoft)](https://cosmos.bluesoft.com.br/), [Open Food Facts](https://world.openfoodfacts.org/) e [UPCitemdb](https://www.upcitemdb.com/) — com **cache permanente** que garante que cada código consome no máximo uma consulta de API na vida toda.
-- **Controle de papéis** via tabela `user_roles`: `admin` (acesso total ao Dashboard, Produtos, Categorias, Usuários, cancelamento de vendas) e `employee` (acesso apenas ao PDV e Histórico de Vendas).
+- **Controle de papéis** via tabela `user_roles`: `admin` (acesso total ao Dashboard, Produtos, Categorias, Usuários, cancelamento de vendas) e `employee` (apenas o PDV e as vendas **do dia** — sem acesso ao histórico completo nem a relatórios antigos). A trava é feita no servidor, então não dá para burlar pela URL.
 - **Cancelamento de venda** restrito a admins, com restauração atômica de estoque via função Postgres.
 - **Baixa automática de estoque** ao confirmar a venda, com bloqueio se o estoque ficar negativo.
 - **Dashboard** com KPIs, gráfico de vendas, top produtos, últimas vendas e alerta de produtos com estoque baixo.
-- **Funciona offline (offline-first)** — o catálogo é cacheado em IndexedDB e o PDV registra vendas mesmo sem internet, guardando-as numa fila local. Ao reconectar, as vendas são reenviadas ao servidor de forma **idempotente** (chave `client_uuid`), e conflitos de estoque viram vendas "rejeitadas" para revisão manual.
+- **Funciona offline (offline-first)** — o catálogo é cacheado em IndexedDB e o PDV registra vendas mesmo sem internet, guardando-as numa fila local. Ao reconectar, as vendas são reenviadas ao servidor de forma **idempotente** (chave `client_uuid`), e conflitos de estoque viram vendas "rejeitadas" para revisão manual. Um **indicador vermelho** aparece no canto quando a conexão cai.
+- **Recibo térmico (80mm)** — impressão do recibo da venda direto pela página do recibo (online) e também **offline**, a partir do carrinho, com marca de "provisório" até a venda sincronizar.
+- **Relatório diário de fechamento por email** — todo dia, em horário fixo, um resumo do caixa (total, ticket médio, quebra por forma de pagamento) é enviado por email aos administradores. Os destinatários são gerenciáveis por uma tela admin.
 - **PWA instalável** — manifesto + Service Worker permitem instalar o app no PC ou celular, com ícone próprio, janela standalone e atalho na área de trabalho.
 - **App desktop para Windows** — instalador `.exe` (Electron) para o caixa ter um funcionamento fixo que resiste a quedas de internet. Baixável por uma página admin no próprio site.
 - **Autenticação** via Supabase Auth com **RLS** habilitado em todas as tabelas e middleware Next.js validando a sessão server-side.
@@ -64,6 +67,7 @@ PDV de balcão para pequenos comércios: leitor USB de código de barras, baixa 
 | PWA | Manifest API do Next.js + Service Worker próprio em `public/sw.js` |
 | Offline | [Dexie](https://dexie.org/) (IndexedDB) — cache de leitura + fila de vendas |
 | Desktop | [Electron](https://www.electronjs.org/) + electron-builder (instalador NSIS) |
+| Email | [Nodemailer](https://nodemailer.com/) (SMTP) + [Vercel Cron](https://vercel.com/docs/cron-jobs) (relatório diário) |
 | Testes | [Vitest](https://vitest.dev/) + Testing Library + fake-indexeddb |
 | CI | GitHub Actions (typecheck + testes + build a cada push) |
 
@@ -92,6 +96,15 @@ NEXT_PUBLIC_SUPABASE_URL=https://seuprojeto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
 COSMOS_API_TOKEN=               # opcional
+
+# Relatório diário por email (opcional — só se quiser o envio automático)
+CRON_SECRET=                    # segredo que protege a rota do cron
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=seuemail@gmail.com
+SMTP_PASS=                      # senha de app (Gmail), não a senha normal
+SMTP_FROM=VendasApp <seuemail@gmail.com>
+REPORT_EMAIL=                   # destinatário(s) garantido(s), separados por vírgula
 ```
 
 ### Migrations do banco
@@ -105,7 +118,8 @@ supabase/migrations/
 ├── 20260526000000_user_roles.sql       roles admin/employee + trigger de signup
 ├── 20260527000000_profiles.sql         nomes/avatar dos usuários
 ├── 20260528000000_cancel_sale.sql      RPC de cancelamento atômico
-└── 20260603000000_offline_sales.sql    client_uuid + RPC idempotente (vendas offline)
+├── 20260603000000_offline_sales.sql    client_uuid + RPC idempotente (vendas offline)
+└── 20260609000000_report_recipients.sql  destinatários do relatório por email (admin)
 ```
 
 ## 🌐 Deploy
@@ -116,7 +130,7 @@ Para deployar a sua própria cópia:
 
 1. Fork o repo
 2. `vercel.com/new` → import → selecione seu fork
-3. Em **Environment Variables**, adicione `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. Em **Environment Variables**, adicione `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` (opcionalmente as variáveis de email — ver [Relatório diário por email](#-relatório-diário-por-email))
 4. Deploy
 
 ## 💻 App Desktop (Windows)
@@ -175,6 +189,26 @@ Para hospedar o `.exe` em outro lugar, defina `NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL`
 > instalador gerado é **não-assinado** (o SmartScreen mostra um aviso na 1ª execução
 > → "Mais informações" → "Executar assim mesmo").
 
+## 📧 Relatório diário por email
+
+Todo dia, às **20h (horário de Brasília)**, o sistema envia por email um **resumo do fechamento de caixa** do dia — total, número de vendas, ticket médio e quebra por forma de pagamento.
+
+Como funciona:
+
+- Um **Vercel Cron** (configurado em [`vercel.json`](vercel.json) — `0 23 * * *` UTC = 20h BRT) chama a rota protegida [`/api/cron/daily-cash-close`](src/app/api/cron/daily-cash-close/route.ts).
+- A rota só roda com o header `Authorization: Bearer $CRON_SECRET` (a Vercel envia automaticamente). Sem o segredo → 401.
+- O resumo é montado pela mesma query do "Fechar caixa" (via service-role, sem sessão de usuário) e o email é enviado por **SMTP** (Nodemailer).
+
+**Quem recebe** é a união de três fontes (deduplicadas, ignorando emails internos `@vendas-app.interno`):
+
+1. Administradores cujo login é um **email real**;
+2. A env `REPORT_EMAIL` (um ou vários, separados por vírgula);
+3. Emails ativos cadastrados na tela admin **`/configuracoes/relatorio`**.
+
+A tela de destinatários permite adicionar, ativar/desativar e remover endereços — útil quando há **mais de um admin** ou quando se quer mandar para o contador, por exemplo. Contas criadas no app logam por usuário (sem caixa de entrada real), por isso o `REPORT_EMAIL` garante a entrega ao dono.
+
+> **Configuração:** defina `CRON_SECRET`, as variáveis `SMTP_*` e `REPORT_EMAIL` no ambiente (local em `.env.local`, produção nas *Environment Variables* da Vercel). Para Gmail, use uma **senha de app** (não a senha normal).
+
 ## 🔌 Como o offline funciona
 
 O servidor (Supabase) é sempre a fonte da verdade; o offline é **otimista** e reconcilia ao reconectar.
@@ -210,9 +244,10 @@ src/
 │   ├── (dashboard)/        área autenticada
 │   │   ├── dashboard/      KPIs e visão geral (admin)
 │   │   ├── produtos/       CRUD de produtos e categorias (admin)
-│   │   ├── vendas/         PDV em /nova, histórico, detalhe, cancelamento
-│   │   ├── configuracoes/  usuários + baixar app desktop (admin)
+│   │   ├── vendas/         PDV em /nova, histórico (do dia p/ funcionário), recibo, cancelamento
+│   │   ├── configuracoes/  usuários + baixar app + destinatários do relatório (admin)
 │   │   └── layout.tsx
+│   ├── api/cron/           rota do relatório diário (Vercel Cron)
 │   ├── manifest.ts         PWA manifest
 │   └── layout.tsx          root, fontes, toaster, registro do SW
 ├── components/
@@ -227,10 +262,11 @@ src/
 ├── lib/
 │   ├── auth/roles.ts       getCurrentUser, requireAdmin, etc.
 │   ├── barcode/lookup.ts   Cosmos → Open Food Facts → UPCitemdb + cache
+│   ├── email/              mailer SMTP, builder do relatório, resolução de destinatários
 │   ├── offline/            cache IndexedDB (Dexie), sync, fila de vendas offline
 │   ├── queries/            consultas tipadas ao Supabase
 │   ├── supabase/           clients de server/client/middleware
-│   ├── utils/              format, display, receipt
+│   ├── utils/              format, datetime (BRT), receipt, print-receipt (recibo offline)
 │   └── validations/        schemas Zod
 └── types/database.ts       tipos gerados a partir do schema
 electron/
@@ -264,6 +300,9 @@ A prioridade é a **lógica de risco**, não cobrir tudo às cegas:
 | `lib/offline/products-repo` | Busca offline por nome/código, filtro de inativos/sem estoque |
 | `vendas/actions` | `createSale`: mapeamento de erros do servidor para mensagem + código |
 | `lib/utils/format` | Moeda (BRL), datas, rótulos de pagamento |
+| `lib/utils/print-receipt` | Recibo 80mm: conteúdo, marca "provisório", escape de HTML |
+| `lib/email/cash-close-email` | Assunto/HTML/texto do relatório; singular/plural; dia vazio |
+| `lib/email/report-recipients` | Merge das 3 fontes de destinatários, dedupe, filtro de internos |
 
 UI e *waterfalls* de dados ficam para testes E2E (Playwright) numa etapa futura.
 
@@ -297,6 +336,9 @@ UI e *waterfalls* de dados ficam para testes E2E (Playwright) numa etapa futura.
 - [x] **PWA Fase 3** — fila de vendas offline + replay idempotente + conflito de estoque
 - [x] **App desktop Windows** — instalável (.exe) via Electron, com offline
 - [x] **Testes unitários** da lógica crítica (Vitest): fila offline, schemas, createSale
+- [x] **Recibo térmico (80mm)** imprimível online e offline (recibo provisório)
+- [x] **Histórico restrito ao dia** para funcionário (trava no servidor)
+- [x] **Relatório diário de fechamento por email** (Vercel Cron + SMTP) com tela admin de destinatários
 - [ ] Testes E2E (Playwright) do fluxo de venda offline
 - [ ] Emissão de NFC-e via serviço terceirizado
 - [ ] Relatórios exportáveis (CSV/PDF)

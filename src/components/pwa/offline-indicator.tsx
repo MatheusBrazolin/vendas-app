@@ -36,10 +36,15 @@ export function OfflineIndicator() {
     <div
       role="status"
       aria-live="polite"
-      className="fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-full bg-orange-600 text-white px-3 py-1.5 text-xs font-medium shadow-lg shadow-orange-900/20 ring-1 ring-orange-700/30"
+      className="fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-full bg-red-600 text-white px-3 py-1.5 text-xs font-semibold shadow-lg shadow-red-900/30 ring-1 ring-red-700/40"
     >
+      {/* Pontinho pulsando reforça o "alarme" de conexão caída. */}
+      <span className="relative flex h-2 w-2" aria-hidden>
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-300 opacity-75" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-red-200" />
+      </span>
       <WifiOff className="h-3.5 w-3.5" aria-hidden />
-      <span>Você está offline — usando dados em cache.</span>
+      <span>Sem internet — usando dados em cache.</span>
     </div>
   )
 }

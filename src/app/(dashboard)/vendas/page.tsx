@@ -13,6 +13,8 @@ import {
 import { Pagination } from '@/components/ui/pagination'
 import { SalesFilters } from '@/components/sales/sales-filters'
 import { getSalesPaged } from '@/lib/queries/sales'
+import { getCurrentUser } from '@/lib/auth/roles'
+import { todayBRISO } from '@/lib/utils/datetime'
 import { formatCurrency, formatDate, PAYMENT_LABELS } from '@/lib/utils/format'
 import type { PaymentMethod } from '@/types/database'
 
@@ -73,8 +75,18 @@ export default async function VendasPage({
 }) {
   const sp = await searchParams
   const payment = parsePayment(sp.payment)
-  const day = isIsoDate(sp.day) ? sp.day : undefined
   const page = sp.page ? Math.max(1, parseInt(sp.page, 10) || 1) : 1
+
+  // Funcionário só enxerga as vendas de HOJE — sem acesso ao histórico antigo.
+  // A trava é no servidor: mesmo que ele force ?day=2026-01-01 na URL, aqui
+  // sobrescrevemos para o dia de hoje (BRT). Admin vê o histórico completo.
+  const user = await getCurrentUser()
+  const isEmployee = user?.role !== 'admin'
+  const day = isEmployee
+    ? todayBRISO()
+    : isIsoDate(sp.day)
+      ? sp.day
+      : undefined
 
   const { items: sales, total, totalPages, pageSize } = await getSalesPaged({
     payment,
@@ -82,7 +94,8 @@ export default async function VendasPage({
     page,
   })
 
-  const hasFilters = Boolean(payment || day)
+  // Para o funcionário, "hoje" é o estado normal, não um filtro que ele aplicou.
+  const hasFilters = Boolean(payment || (!isEmployee && day))
 
   const paginationParams: Record<string, string | undefined> = {
     payment,
@@ -93,10 +106,12 @@ export default async function VendasPage({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Vendas</h1>
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">
+            {isEmployee ? 'Vendas de hoje' : 'Vendas'}
+          </h1>
           <p className="text-sm text-slate-500 mt-1">
             {total} {total === 1 ? 'venda registrada' : 'vendas registradas'}
-            {hasFilters ? ' (com filtros aplicados)' : ''}
+            {isEmployee ? ' hoje' : hasFilters ? ' (com filtros aplicados)' : ''}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -125,6 +140,7 @@ export default async function VendasPage({
           payment={payment ?? ''}
           day={day ?? ''}
           hasFilters={hasFilters}
+          lockedDay={isEmployee}
         />
 
         <div className="overflow-x-auto">
