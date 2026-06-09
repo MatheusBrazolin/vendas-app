@@ -86,10 +86,16 @@ export function CashCloseView({ summary }: CashCloseViewProps) {
     window.print()
   }
 
+  // dd-MM-yyyy (não usamos '/' porque o Windows bloqueia esse char em nome
+  // de arquivo). O texto do botão de salvar fica humano: "Histórico de
+  // vendas - 08-06-2026.pdf".
+  const summaryDateBR = format(new Date(`${summary.date}T12:00:00`), 'dd-MM-yyyy')
+  const pdfSuggestedName = `Histórico de vendas - ${summaryDateBR}.pdf`
+
   async function handleSavePdf() {
     const bridge = typeof window !== 'undefined' ? window.vendasDesktop : undefined
     if (bridge) {
-      const result = await bridge.savePdf({ suggestedName: `fechamento-${summary.date}.pdf` })
+      const result = await bridge.savePdf({ suggestedName: pdfSuggestedName })
       if (result.ok) {
         toast.success('PDF salvo com sucesso.')
       } else if (result.reason === 'error') {
