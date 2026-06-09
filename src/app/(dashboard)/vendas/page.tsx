@@ -11,7 +11,9 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Pagination } from '@/components/ui/pagination'
+import { SalesFilters } from '@/components/sales/sales-filters'
 import { getSalesPaged } from '@/lib/queries/sales'
+import { isAdmin } from '@/lib/auth/roles'
 import { formatCurrency, formatDate, PAYMENT_LABELS } from '@/lib/utils/format'
 import type { PaymentMethod } from '@/types/database'
 
@@ -77,12 +79,10 @@ export default async function VendasPage({
   const to = isIsoDate(sp.to) ? sp.to : undefined
   const page = sp.page ? Math.max(1, parseInt(sp.page, 10) || 1) : 1
 
-  const { items: sales, total, totalPages, pageSize } = await getSalesPaged({
-    payment,
-    from,
-    to,
-    page,
-  })
+  const [{ items: sales, total, totalPages, pageSize }, admin] = await Promise.all([
+    getSalesPaged({ payment, from, to, page }),
+    isAdmin(),
+  ])
 
   const hasFilters = Boolean(payment || from || to)
 
@@ -103,16 +103,22 @@ export default async function VendasPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            asChild
-            variant="outline"
-            className="border-slate-200 text-slate-700 hover:bg-slate-50"
-          >
-            <Link href="/vendas/fechamento">
-              <Wallet className="mr-1.5 h-4 w-4" />
-              Fechar caixa
-            </Link>
-          </Button>
+          {/* Fechar caixa é admin-only — a página /vendas/fechamento chama
+              requireAdmin() e redireciona funcionário pra /vendas/nova.
+              Sem essa checagem, o funcionário clicava no botão e caía no
+              loop de redirect, parecendo bug. */}
+          {admin && (
+            <Button
+              asChild
+              variant="outline"
+              className="border-slate-200 text-slate-700 hover:bg-slate-50"
+            >
+              <Link href="/vendas/fechamento">
+                <Wallet className="mr-1.5 h-4 w-4" />
+                Fechar caixa
+              </Link>
+            </Button>
+          )}
           <Button asChild className="bg-green-600 hover:bg-green-700 text-white shadow-sm">
             <Link href="/vendas/nova">
               <Plus className="mr-1.5 h-4 w-4" />
@@ -123,51 +129,12 @@ export default async function VendasPage({
       </div>
 
       <Card className="border-slate-200/80 shadow-sm">
-        <form className="p-4 border-b border-slate-100 grid grid-cols-1 sm:grid-cols-12 gap-3 sm:items-end">
-          <select
-            name="payment"
-            defaultValue={payment ?? ''}
-            className="sm:col-span-3 h-10 px-3 border border-slate-200 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/15 focus:border-blue-600"
-            aria-label="Método de pagamento"
-          >
-            <option value="">Todos os pagamentos</option>
-            <option value="cash">Dinheiro</option>
-            <option value="pix">PIX</option>
-            <option value="credit">Crédito</option>
-            <option value="debit">Débito</option>
-          </select>
-
-          <div className="sm:col-span-3">
-            <label className="block text-[11px] text-slate-500 mb-1">De</label>
-            <input
-              type="date"
-              name="from"
-              defaultValue={from}
-              className="w-full h-10 px-3 border border-slate-200 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/15 focus:border-blue-600"
-            />
-          </div>
-
-          <div className="sm:col-span-3">
-            <label className="block text-[11px] text-slate-500 mb-1">Até</label>
-            <input
-              type="date"
-              name="to"
-              defaultValue={to}
-              className="w-full h-10 px-3 border border-slate-200 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/15 focus:border-blue-600"
-            />
-          </div>
-
-          <div className="sm:col-span-3 flex gap-2 sm:items-end">
-            <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
-              Filtrar
-            </Button>
-            {hasFilters && (
-              <Button asChild variant="outline" className="border-slate-200 px-3" title="Limpar filtros">
-                <Link href="/vendas">×</Link>
-              </Button>
-            )}
-          </div>
-        </form>
+        <SalesFilters
+          payment={payment ?? ''}
+          from={from ?? ''}
+          to={to ?? ''}
+          hasFilters={hasFilters}
+        />
 
         <div className="overflow-x-auto">
           <Table>
