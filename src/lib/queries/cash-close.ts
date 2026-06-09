@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { brDayRangeUTC, todayBRISO } from '@/lib/utils/datetime'
 import type { PaymentMethod } from '@/types/database'
 
 export interface PaymentBreakdown {
@@ -65,8 +66,11 @@ interface RawSale {
  * including each sale's line items (product, quantity, prices).
  */
 export async function getCashClose(localDate: string): Promise<CashCloseSummary> {
-  const start = new Date(`${localDate}T00:00:00`)
-  const end = new Date(`${localDate}T23:59:59.999`)
+  // localDate is the BRT calendar day the operator picked. Translate that
+  // into the UTC instants that bound the day in São Paulo so the query
+  // catches sales rung up after 21:00 local (which are already "tomorrow"
+  // in UTC).
+  const { start, end } = brDayRangeUTC(localDate)
 
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -74,8 +78,8 @@ export async function getCashClose(localDate: string): Promise<CashCloseSummary>
     .select(
       'id, created_at, total_amount, payment_method, notes, sale_items(quantity, unit_price, subtotal, products(code, name))',
     )
-    .gte('created_at', start.toISOString())
-    .lte('created_at', end.toISOString())
+    .gte('created_at', start)
+    .lte('created_at', end)
     .order('created_at', { ascending: true })
 
   if (error) throw new Error(error.message)
@@ -120,11 +124,7 @@ export async function getCashClose(localDate: string): Promise<CashCloseSummary>
   return { date: localDate, count, total, averageTicket, byPayment, sales }
 }
 
-/** YYYY-MM-DD of "today" in the server's local time. */
+/** YYYY-MM-DD of "today" in São Paulo, regardless of where the code runs. */
 export function todayLocalISO(): string {
-  const now = new Date()
-  const yyyy = now.getFullYear()
-  const mm = String(now.getMonth() + 1).padStart(2, '0')
-  const dd = String(now.getDate()).padStart(2, '0')
-  return `${yyyy}-${mm}-${dd}`
+  return todayBRISO()
 }
