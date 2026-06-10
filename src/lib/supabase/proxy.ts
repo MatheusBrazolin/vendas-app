@@ -2,6 +2,9 @@ import { createServerClient } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
 import type { Database } from '@/types/database'
 
+const PROTECTED_PATHS = ['/dashboard', '/vendas', '/produtos', '/configuracoes', '/relatorios']
+const AUTH_PATHS = ['/login', '/cadastro', '/esqueceu-senha', '/redefinir-senha']
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -27,16 +30,22 @@ export async function updateSession(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
+  const { pathname } = request.nextUrl
 
-  const isAuthRoute =
-    request.nextUrl.pathname.startsWith('/login') ||
-    request.nextUrl.pathname.startsWith('/cadastro') ||
-    request.nextUrl.pathname.startsWith('/esqueceu-senha')
+  const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p))
+  const isAuthRoute = AUTH_PATHS.some((p) => pathname.startsWith(p))
 
-  // Redirect logged-in users away from auth pages
+  // Unauthenticated user trying to access a protected route → login
+  if (!user && isProtected) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  // Authenticated user hitting an auth page → app home
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = '/vendas/nova'
     return NextResponse.redirect(url)
   }
 

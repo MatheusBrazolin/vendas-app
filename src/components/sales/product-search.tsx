@@ -149,7 +149,7 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
   return (
     <div className="space-y-2">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <Search aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <Input
           ref={inputRef}
           value={query}
@@ -160,17 +160,18 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
           autoComplete="off"
           spellCheck={false}
           inputMode="text"
+          aria-label="Buscar produto por código ou nome"
         />
-        <ScanBarcode className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <ScanBarcode aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
       </div>
 
       <div className="px-1 space-y-1 text-[11px] text-slate-400">
         <p>
-          <ScanBarcode className="inline h-3 w-3 mr-1 -mt-0.5 text-slate-400" />
+          <ScanBarcode aria-hidden="true" className="inline h-3 w-3 mr-1 -mt-0.5 text-slate-400" />
           <strong className="text-slate-600">Com código:</strong> bipe o leitor — adiciona 1 unidade no carrinho.
         </p>
         <p>
-          <Search className="inline h-3 w-3 mr-1 -mt-0.5 text-slate-400" />
+          <Search aria-hidden="true" className="inline h-3 w-3 mr-1 -mt-0.5 text-slate-400" />
           <strong className="text-slate-600">Sem código:</strong> digite o nome, ajuste a quantidade e clique em <strong>Adicionar</strong>.
         </p>
       </div>

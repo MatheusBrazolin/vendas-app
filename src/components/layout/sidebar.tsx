@@ -12,6 +12,7 @@ import {
   Users,
   Mail,
   MonitorDown,
+  BarChart3,
   Menu,
   type LucideIcon,
 } from 'lucide-react'
@@ -53,6 +54,12 @@ const navSections: NavSection[] = [
     items: [
       { href: '/configuracoes/usuarios', label: 'Usuários', icon: Users, adminOnly: true },
       {
+        href: '/relatorios',
+        label: 'Relatório de lucro',
+        icon: BarChart3,
+        adminOnly: true,
+      },
+      {
         href: '/configuracoes/relatorio',
         label: 'Relatório por email',
         icon: Mail,
@@ -65,6 +72,7 @@ const navSections: NavSection[] = [
 
 function isItemActive(href: string, pathname: string): boolean {
   if (href === '/dashboard') return pathname === '/dashboard'
+  if (href === '/relatorios') return pathname.startsWith('/relatorios')
   if (href === '/vendas') {
     return pathname === '/vendas' || /^\/vendas\/[^/]+$/.test(pathname)
   }
