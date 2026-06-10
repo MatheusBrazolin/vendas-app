@@ -1,4 +1,4 @@
-import { Mail, MailCheck, Info } from 'lucide-react'
+import { Mail, MailCheck, Info, Send } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import {
   Table,
@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/roles'
 import { AddRecipientForm } from './add-recipient-form'
 import { RecipientActions } from './recipient-actions'
+import { SendReportNow } from './send-report-now'
 
 export const metadata = {
   title: 'Relatório por email',
@@ -54,6 +55,25 @@ export default async function RelatorioPage() {
           Gerencie quem recebe o relatório diário de fechamento de caixa.
         </p>
       </div>
+
+      {/* Manual send: emails everything sold so far today, on demand */}
+      <Card className="border-emerald-200/70 bg-emerald-50/40 shadow-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 shrink-0 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+            <Send className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-900">
+              Enviar relatório agora
+            </p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Manda por email o que foi vendido hoje até este momento, para todos
+              os destinatários ativos.
+            </p>
+          </div>
+        </div>
+        <SendReportNow />
+      </Card>
 
       {/* Quick stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
