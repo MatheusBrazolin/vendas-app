@@ -1,4 +1,9 @@
 import { defineConfig, devices } from '@playwright/test'
+import { loadEnvConfig } from '@next/env'
+
+// Carrega .env.test.local (e demais arquivos .env do Next.js) para os testes E2E.
+// NODE_ENV=test é definido automaticamente pelo Playwright.
+loadEnvConfig(process.cwd())
 
 export default defineConfig({
   testDir: './e2e',
