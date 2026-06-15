@@ -31,6 +31,7 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
 beforeEach(async () => {
   const db = getDB()
   await db.products.clear()
+  await db.syncMeta.clear()
   vi.clearAllMocks()
 })
 
@@ -93,9 +94,10 @@ describe('getByCode', () => {
 })
 
 describe('ensureProductsCached', () => {
-  it('does nothing when the cache already has products', async () => {
+  it('does nothing when the cache already has products and meta is fresh', async () => {
     const db = getDB()
     await db.products.add(makeProduct())
+    await db.syncMeta.put({ key: 'products', lastSyncAt: new Date().toISOString(), count: 1 })
     await ensureProductsCached()
     expect(syncProducts).not.toHaveBeenCalled()
   })
