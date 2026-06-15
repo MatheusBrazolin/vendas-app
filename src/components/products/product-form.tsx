@@ -8,11 +8,11 @@ import {
   type FocusEvent,
   type KeyboardEvent,
 } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Loader2, Save, X, ScanBarcode } from 'lucide-react'
+import { Loader2, Save, X, ScanBarcode, TrendingUp, TrendingDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -34,6 +34,58 @@ const SOURCE_LABELS: Record<string, string> = {
   upcitemdb: 'UPCitemdb',
 }
 
+// ── Currency input (ATM-style) ──────────────────────────────────────────────
+// Digits only; last 2 are always the decimal cents.
+// "2" → "0,02" | "250" → "2,50" | "25000" → "250,00" | "2500000" → "25.000,00"
+
+function centsToBRL(cents: number): string {
+  return (cents / 100).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
+interface CurrencyInputProps {
+  id: string
+  value: number
+  onChange: (value: number) => void
+  placeholder?: string
+  hasError?: boolean
+  disabled?: boolean
+}
+
+function CurrencyInput({ id, value, onChange, placeholder = '0,00', hasError, disabled }: CurrencyInputProps) {
+  const initialCents = Math.round((value || 0) * 100)
+  const [display, setDisplay] = useState(initialCents > 0 ? centsToBRL(initialCents) : '')
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const digits = e.target.value.replace(/\D/g, '')
+    if (!digits) {
+      setDisplay('')
+      onChange(0)
+      return
+    }
+    const cents = parseInt(digits, 10)
+    setDisplay(centsToBRL(cents))
+    onChange(cents / 100)
+  }
+
+  return (
+    <Input
+      id={id}
+      value={display}
+      onChange={handleChange}
+      placeholder={placeholder}
+      inputMode="numeric"
+      autoComplete="off"
+      disabled={disabled}
+      aria-invalid={hasError}
+      className="h-10 border-slate-200"
+    />
+  )
+}
+// ───────────────────────────────────────────────────────────────────────────
+
 interface ProductFormProps {
   product?: Product
   categories: Category[]
@@ -53,6 +105,7 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
     handleSubmit,
     setValue,
     setError,
+    control,
     formState: { errors },
   } = useForm<ProductFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,8 +124,19 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
       : { stock_quantity: 0, min_stock: 0, cost_price: 0, sale_price: 0 },
   })
 
+  const watchedSalePrice = useWatch({ control, name: 'sale_price' })
+  const watchedCostPrice = useWatch({ control, name: 'cost_price' })
+
+  const saleNum = Number(watchedSalePrice) || 0
+  const costNum = Number(watchedCostPrice) || 0
+  const profitValue = saleNum - costNum
+  // Margem: quanto % do preço de venda é lucro ("de cada R$100 vendidos, X é lucro")
+  const marginPct = saleNum > 0 ? (profitValue / saleNum) * 100 : null
+  // % sobre o custo: quanto acima do preço de custo está o preço de venda
+  const overCostPct = costNum > 0 ? (profitValue / costNum) * 100 : null
+  const showMargin = saleNum > 0 && costNum > 0
+
   // Resolve refs by composing react-hook-form's ref with our local refs.
-  // We must call register() once per field and capture the result.
   const codeRegister = register('code')
   const nameRegister = register('name')
   const codeInputRef = useRef<HTMLInputElement | null>(null)
@@ -84,20 +148,10 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
     }
   }, [isNew])
 
-  /**
-   * Heuristic: real barcodes (EAN-8, EAN-13, UPC-A, etc.) are 8+ purely numeric digits.
-   * Anything else is treated as a custom internal SKU and skipped to avoid wasted API calls.
-   */
   function looksLikeBarcode(code: string): boolean {
     return /^\d{8,14}$/.test(code)
   }
 
-  /**
-   * Try to enrich the form using the scanned/typed code.
-   * - If already in own DB → toast + offer to open the existing product.
-   * - If found via Cosmos / Open Food Facts → pre-fill name & description.
-   * - If not found → focus next field so the user can fill manually.
-   */
   async function runBarcodeLookup(code: string) {
     const trimmed = code.trim()
     if (!trimmed || !isNew) {
@@ -105,7 +159,6 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
       return
     }
 
-    // For custom SKUs (e.g. "EX-001") we still check duplicates but skip external APIs
     const isBarcode = looksLikeBarcode(trimmed)
 
     setIsLookingUp(true)
@@ -140,8 +193,6 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
         return
       }
 
-      // not_found — only show "not found" toast for actual barcodes; for SKUs the user
-      // is expected to type the name manually.
       if (isBarcode) {
         toast.info('Código não encontrado. Preencha os dados manualmente.')
       }
@@ -151,8 +202,6 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
     }
   }
 
-  // USB scanners send Enter after the code. Block accidental form submit
-  // and trigger the lookup → pre-fill flow.
   function handleCodeKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') {
       e.preventDefault()
@@ -161,7 +210,6 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
   }
 
   function handleCodeBlur(e: FocusEvent<HTMLInputElement>) {
-    // Also trigger lookup when the user tabs out (typed the code manually)
     if (isNew && e.currentTarget.value.trim()) {
       void runBarcodeLookup(e.currentTarget.value)
     }
@@ -275,21 +323,23 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
             )}
           </div>
 
+          {/* ── Prices ── */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="sale_price" className="text-xs font-medium text-slate-700">
                 Preço de Venda (R$) <span className="text-red-500">*</span>
               </Label>
-              <Input
-                id="sale_price"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0,00"
-                required
-                aria-invalid={!!errors.sale_price}
-                className="h-10 border-slate-200"
-                {...register('sale_price')}
+              <Controller
+                control={control}
+                name="sale_price"
+                render={({ field }) => (
+                  <CurrencyInput
+                    id="sale_price"
+                    value={field.value as number}
+                    onChange={field.onChange}
+                    hasError={!!errors.sale_price}
+                  />
+                )}
               />
               {errors.sale_price && (
                 <p className="text-red-500 text-xs">{errors.sale_price.message}</p>
@@ -300,22 +350,57 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
               <Label htmlFor="cost_price" className="text-xs font-medium text-slate-700">
                 Preço de Custo (R$) <span className="text-red-500">*</span>
               </Label>
-              <Input
-                id="cost_price"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0,00"
-                required
-                aria-invalid={!!errors.cost_price}
-                className="h-10 border-slate-200"
-                {...register('cost_price')}
+              <Controller
+                control={control}
+                name="cost_price"
+                render={({ field }) => (
+                  <CurrencyInput
+                    id="cost_price"
+                    value={field.value as number}
+                    onChange={field.onChange}
+                    hasError={!!errors.cost_price}
+                  />
+                )}
               />
               {errors.cost_price && (
                 <p className="text-red-500 text-xs">{errors.cost_price.message}</p>
               )}
             </div>
           </div>
+
+          {/* ── Live margin feedback ── */}
+          {showMargin && (
+            <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg px-4 py-2.5 text-sm border ${
+              profitValue >= 0
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                : 'bg-red-50 border-red-200 text-red-800'
+            }`}>
+              {profitValue >= 0
+                ? <TrendingUp className="h-4 w-4 shrink-0" />
+                : <TrendingDown className="h-4 w-4 shrink-0" />
+              }
+              <span className="font-medium">
+                Lucro por unidade:{' '}
+                <strong>
+                  R$ {Math.abs(profitValue).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {profitValue < 0 && ' (prejuízo)'}
+                </strong>
+              </span>
+              <span className="text-xs opacity-80 flex gap-3">
+                {marginPct !== null && (
+                  <span>
+                    Margem: <strong>{marginPct.toFixed(1)}%</strong>
+                    <span className="font-normal opacity-70"> da venda</span>
+                  </span>
+                )}
+                {overCostPct !== null && (
+                  <span>
+                    Ganho s/ custo: <strong>{overCostPct.toFixed(1)}%</strong>
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">

@@ -15,6 +15,7 @@ import { emailToUsername, isInternalEmail } from '@/lib/supabase/service'
 import { UserRoleSelect } from './user-role-select'
 import { CreateEmployeeDialog } from './create-employee-dialog'
 import { UserActions } from './user-actions'
+import { SavedProfilesManager } from './saved-profiles-manager'
 
 export const metadata = {
   title: 'Usuários',
@@ -222,6 +223,8 @@ export default async function UsuariosPage() {
           Promova a <strong>Administrador</strong> quando necessário.
         </div>
       </Card>
+
+      <SavedProfilesManager />
     </div>
   )
 }

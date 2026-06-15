@@ -89,4 +89,44 @@ describe('mergeReportRecipients', () => {
       'only@table.com',
     ])
   })
+
+  it('excludes disabled emails from the admin source', () => {
+    const result = mergeReportRecipients(
+      ['admin@empresa.com', 'outro@empresa.com'],
+      undefined,
+      [],
+      ['admin@empresa.com'],
+    )
+    expect(result).toEqual(['outro@empresa.com'])
+  })
+
+  it('excludes disabled emails from the REPORT_EMAIL env source', () => {
+    const result = mergeReportRecipients(
+      [],
+      'gestor@empresa.com,contador@empresa.com',
+      [],
+      ['gestor@empresa.com'],
+    )
+    expect(result).toEqual(['contador@empresa.com'])
+  })
+
+  it('excludes disabled emails case-insensitively across all sources', () => {
+    const result = mergeReportRecipients(
+      ['Admin@Empresa.com'],
+      'ADMIN@empresa.com',
+      ['admin@empresa.com'],
+      ['admin@empresa.com'],
+    )
+    expect(result).toEqual([])
+  })
+
+  it('disabling one email does not affect others', () => {
+    const result = mergeReportRecipients(
+      ['admin@empresa.com'],
+      'gestor@empresa.com',
+      ['extra@cliente.com'],
+      ['admin@empresa.com'],
+    )
+    expect(result).toEqual(['gestor@empresa.com', 'extra@cliente.com'])
+  })
 })

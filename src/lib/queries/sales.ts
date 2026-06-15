@@ -69,7 +69,7 @@ export async function getSaleById(id: string): Promise<SaleWithItems | null> {
 
   const { data, error } = await supabase
     .from('sales')
-    .select('*, sale_items(*, products(*))')
+    .select('*, sale_items(*, products(*)), customers(full_name)')
     .eq('id', id)
     .single()
 

@@ -1,6 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import type { CustomerBalance, Customer, DebtPayment, Sale } from '@/types/database'
 
+export interface PaymentReceiptData {
+  payment: DebtPayment
+  customer: Customer
+  remainingDebt: number
+}
+
 export async function getCustomersWithDebt(): Promise<CustomerBalance[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -60,5 +66,27 @@ export async function getCustomerDetails(id: string): Promise<CustomerDetails | 
     totalFiado,
     totalPaid,
     currentDebt,
+  }
+}
+
+export async function getPaymentReceipt(
+  customerId: string,
+  paymentId: string,
+): Promise<PaymentReceiptData | null> {
+  const supabase = await createClient()
+
+  const [paymentRes, customerRes, balanceRes] = await Promise.all([
+    supabase.from('debt_payments').select('*').eq('id', paymentId).eq('customer_id', customerId).single(),
+    supabase.from('customers').select('*').eq('id', customerId).single(),
+    supabase.from('customer_balances').select('current_debt').eq('id', customerId).single(),
+  ])
+
+  if (paymentRes.error || !paymentRes.data) return null
+  if (customerRes.error || !customerRes.data) return null
+
+  return {
+    payment: paymentRes.data as DebtPayment,
+    customer: customerRes.data as Customer,
+    remainingDebt: balanceRes.data?.current_debt ?? 0,
   }
 }

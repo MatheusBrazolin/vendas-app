@@ -54,19 +54,27 @@ export async function getByCode(code: string): Promise<Product | null> {
   return product
 }
 
+const STALE_MS = 5 * 60_000 // re-sync if cache is older than 5 minutes
+
 /**
- * First-load safety net: if the local cache is empty and we're online, pull
- * products once so the PDV isn't blank before the background sync lands.
- * No-op offline or when the cache is already populated. Best-effort —
- * swallows errors since the PDV must keep working regardless.
+ * First-load safety net: syncs products if the local cache is empty OR if the
+ * last sync is older than STALE_MS (5 min). This ensures a newly created or
+ * edited product shows up in the PDV without waiting for the 60-second periodic
+ * sync. Best-effort — swallows errors since the PDV must keep working regardless.
  */
 export async function ensureProductsCached(): Promise<void> {
   try {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
     const db = getDB()
     const count = await db.products.count()
-    if (count > 0) return
-    if (typeof navigator !== 'undefined' && !navigator.onLine) return
-    await syncProducts()
+    if (count === 0) {
+      await syncProducts()
+      return
+    }
+    const meta = await db.syncMeta.get('products')
+    if (!meta || Date.now() - new Date(meta.lastSyncAt).getTime() > STALE_MS) {
+      await syncProducts()
+    }
   } catch {
     // Best-effort; the empty-state UI handles a still-empty cache.
   }

@@ -330,6 +330,7 @@ export interface Database {
           total_paid: number
           current_debt: number
           last_payment_at: string | null
+          first_fiado_at: string | null
         }
         Relationships: []
       }
@@ -413,6 +414,7 @@ export type ProductWithCategory = Product & {
 
 export type SaleWithItems = Sale & {
   sale_items: (SaleItem & { products: Product })[]
+  customers: { full_name: string } | null
 }
 
 export type CartItem = {

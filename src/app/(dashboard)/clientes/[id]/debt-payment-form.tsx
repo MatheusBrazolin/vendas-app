@@ -45,11 +45,16 @@ export function DebtPaymentForm({ customerId, customerName }: DebtPaymentFormPro
       return
     }
 
-    toast.success('Pagamento registrado!')
     setOpen(false)
     setAmountRaw('')
     setNotes('')
-    router.refresh()
+
+    if (result.paymentId) {
+      router.push(`/clientes/${customerId}/recibo-pagamento/${result.paymentId}`)
+    } else {
+      toast.success('Pagamento registrado!')
+      router.refresh()
+    }
   }
 
   return (

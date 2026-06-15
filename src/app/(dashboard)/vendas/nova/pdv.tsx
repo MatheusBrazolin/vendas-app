@@ -168,6 +168,7 @@ export function PDV() {
         total_paid: 0,
         current_debt: 0,
         last_payment_at: null,
+        first_fiado_at: null,
       })
       setCustomerQuery('')
       setCustomerResults([])

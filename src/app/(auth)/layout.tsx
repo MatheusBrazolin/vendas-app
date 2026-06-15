@@ -76,7 +76,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </aside>
 
       {/* Right: form */}
-      <section className="flex-1 flex items-center justify-center bg-white p-6 sm:p-12">
+      <section className="flex-1 flex items-center justify-center p-6 sm:p-12 bg-gradient-to-br from-white via-slate-50/60 to-blue-50/30">
         {children}
       </section>
     </div>

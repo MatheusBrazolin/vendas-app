@@ -102,49 +102,65 @@ export function ReceiptView({ sale, storeName = 'VendasApp' }: ReceiptViewProps)
 }
 
 function ReceiptBody({ sale, storeName }: { sale: SaleWithItems; storeName: string }) {
+  const isFiado = sale.payment_method === 'fiado'
+  const customerName = sale.customers?.full_name
+
   return (
     <div
       className="font-mono text-[11px] leading-tight text-black p-3"
       style={{ width: '80mm', maxWidth: '100%' }}
     >
-      <div className="text-center mb-2">
-        <p className="text-sm font-bold uppercase tracking-wide">{storeName}</p>
+      {/* Cabeçalho */}
+      <div className="text-center mb-1">
+        <p className="text-[10px]">{'* * * * * * * * * * * * * * * * * *'}</p>
+        <p className="text-sm font-bold uppercase tracking-widest mt-0.5">{storeName}</p>
+        {isFiado && (
+          <p className="text-[10px] font-semibold tracking-wide mt-0.5">— COMPRA FIADA —</p>
+        )}
+        <p className="text-[10px] mt-0.5">{'* * * * * * * * * * * * * * * * * *'}</p>
       </div>
 
       <Separator />
 
+      {/* Dados da venda */}
       <div className="space-y-0.5">
         <p>
-          <span className="font-semibold">Venda:</span> {shortSaleId(sale.id)}
+          <span className="font-semibold">Venda :</span> {shortSaleId(sale.id)}
         </p>
         <p>
-          <span className="font-semibold">Data:</span> {formatDate(sale.created_at)}
+          <span className="font-semibold">Data  :</span> {formatDate(sale.created_at)}
         </p>
+        {isFiado && customerName && (
+          <p>
+            <span className="font-semibold">Cliente:</span> {customerName}
+          </p>
+        )}
       </div>
 
       <Separator />
 
+      {/* Itens */}
       <table className="w-full text-[10px]">
         <thead>
           <tr className="border-b border-dashed border-black">
-            <th className="text-left pb-1">Item</th>
-            <th className="text-center pb-1">Qtd</th>
-            <th className="text-right pb-1">Unit.</th>
-            <th className="text-right pb-1">Total</th>
+            <th className="text-left pb-1 font-semibold">ITEM</th>
+            <th className="text-center pb-1 font-semibold">QTD</th>
+            <th className="text-right pb-1 font-semibold">UNIT.</th>
+            <th className="text-right pb-1 font-semibold">TOTAL</th>
           </tr>
         </thead>
         <tbody>
           {sale.sale_items.map((item) => (
             <tr key={item.id} className="align-top">
               <td className="pr-1 py-0.5 break-words">
-                <span className="block">{item.products.name}</span>
-                <span className="text-[9px] text-slate-500">{item.products.code}</span>
+                <span className="block font-medium">{item.products.name}</span>
+                <span className="text-[9px] text-slate-400">{item.products.code}</span>
               </td>
               <td className="text-center py-0.5">{item.quantity}</td>
               <td className="text-right py-0.5 whitespace-nowrap">
                 {formatCurrency(item.unit_price)}
               </td>
-              <td className="text-right py-0.5 whitespace-nowrap font-semibold">
+              <td className="text-right py-0.5 whitespace-nowrap font-bold">
                 {formatCurrency(item.subtotal)}
               </td>
             </tr>
@@ -154,28 +170,50 @@ function ReceiptBody({ sale, storeName }: { sale: SaleWithItems; storeName: stri
 
       <Separator />
 
+      {/* Total */}
       <div className="flex justify-between font-bold text-sm">
         <span>TOTAL</span>
         <span>{formatCurrency(sale.total_amount)}</span>
       </div>
 
       <div className="mt-1 text-[10px]">
-        <span className="font-semibold">Pagamento:</span> {PAYMENT_LABELS[sale.payment_method]}
+        <span className="font-semibold">Pagamento:</span>{' '}
+        <span className="uppercase">{PAYMENT_LABELS[sale.payment_method]}</span>
       </div>
 
+      {/* Observações */}
       {sale.notes && (
         <>
           <Separator />
           <div className="text-[10px]">
-            <p className="font-semibold">Observações:</p>
+            <p className="font-semibold">Obs.:</p>
             <p className="break-words">{sale.notes}</p>
+          </div>
+        </>
+      )}
+
+      {/* Assinatura do comprador (somente fiado) */}
+      {isFiado && (
+        <>
+          <Separator />
+          <div className="text-[10px] space-y-3 pt-1">
+            <p className="font-semibold">Declaro que recebi os itens acima:</p>
+            <div className="mt-4 pt-1 border-t border-black">
+              <p className="text-center text-[9px] mt-0.5">
+                Assinatura do comprador
+              </p>
+              {customerName && (
+                <p className="text-center text-[9px] mt-0.5">{customerName}</p>
+              )}
+            </div>
           </div>
         </>
       )}
 
       <Separator />
 
-      <p className="text-center text-[10px] mt-1">Obrigado pela preferência!</p>
+      <p className="text-center text-[10px] mt-0.5">Obrigado pela preferencia!</p>
+      <p className="text-center text-[10px]">{'- - - - - - - - - - - - - - - -'}</p>
     </div>
   )
 }

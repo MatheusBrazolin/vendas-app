@@ -6,9 +6,9 @@ import { getCustomersWithDebt } from '@/lib/queries/customers'
 import { formatCurrency } from '@/lib/utils/format'
 import type { CustomerBalance } from '@/types/database'
 
-function daysSinceLastPayment(lastPaymentAt: string | null): number | null {
-  if (!lastPaymentAt) return null
-  return differenceInCalendarDays(new Date(), new Date(lastPaymentAt))
+function daysSince(dateStr: string | null): number | null {
+  if (!dateStr) return null
+  return differenceInCalendarDays(new Date(), new Date(dateStr))
 }
 
 function DebtBadge({ customer }: { customer: CustomerBalance }) {
@@ -23,7 +23,20 @@ function DebtBadge({ customer }: { customer: CustomerBalance }) {
     )
   }
 
-  const days = daysSinceLastPayment(customer.last_payment_at)
+  // When the customer has never paid, count days since the first fiado purchase
+  // instead of showing a generic "Nunca pagou" — a brand-new customer just starting
+  // on fiado shouldn't see that message right away.
+  const referenceDate = customer.last_payment_at ?? customer.first_fiado_at
+  const days = daysSince(referenceDate)
+
+  let label: string
+  if (customer.last_payment_at !== null) {
+    label = days === 0 ? 'Pagou hoje' : `${days} ${days === 1 ? 'dia' : 'dias'} sem pagar`
+  } else if (days !== null) {
+    label = days === 0 ? 'Comprou hoje' : `${days} ${days === 1 ? 'dia' : 'dias'} em aberto`
+  } else {
+    label = 'Sem histórico'
+  }
 
   return (
     <div className="space-y-1">
@@ -31,13 +44,7 @@ function DebtBadge({ customer }: { customer: CustomerBalance }) {
         <AlertCircle className="h-4 w-4 shrink-0" />
         <span className="text-base font-bold tabular-nums">{formatCurrency(debt)}</span>
       </div>
-      <p className="text-xs text-slate-500">
-        {customer.last_payment_at === null
-          ? 'Nunca pagou'
-          : days === 0
-            ? 'Pagou hoje'
-            : `${days} ${days === 1 ? 'dia' : 'dias'} sem pagar`}
-      </p>
+      <p className="text-xs text-slate-500">{label}</p>
     </div>
   )
 }

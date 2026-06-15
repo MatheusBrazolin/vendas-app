@@ -60,6 +60,7 @@ export interface RecordDebtPaymentInput {
 
 export interface RecordDebtPaymentResult {
   success: boolean
+  paymentId?: string
   error?: string
 }
 
@@ -76,7 +77,16 @@ export async function recordDebtPayment(
 
   if (error) return { success: false, error: error.message }
 
+  // Fetch the ID of the payment just inserted (most recent for this customer)
+  const { data: paymentRow } = await supabase
+    .from('debt_payments')
+    .select('id')
+    .eq('customer_id', input.customerId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+
   revalidatePath('/clientes')
   revalidatePath(`/clientes/${input.customerId}`)
-  return { success: true }
+  return { success: true, paymentId: paymentRow?.id }
 }
