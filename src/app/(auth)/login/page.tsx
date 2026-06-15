@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
@@ -22,7 +22,7 @@ import {
 
 type Mode = 'profiles' | 'profile-password' | 'full-form'
 
-export default function LoginPage() {
+function LoginPageContent() {
   const [profiles, setProfiles] = useState<RecentProfile[]>([])
   const [mode, setMode] = useState<Mode>('full-form')
   const [selected, setSelected] = useState<string | null>(null)
@@ -350,5 +350,13 @@ export default function LoginPage() {
         Protegido por autenticação Supabase
       </p>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginPageContent />
+    </Suspense>
   )
 }
