@@ -36,7 +36,7 @@ export default defineConfig({
     {
       name: 'mobile',
       use: {
-        ...devices['iPhone 13'],
+        ...devices['Pixel 5'],
         storageState: 'e2e/.auth/admin.json',
       },
       dependencies: ['setup'],

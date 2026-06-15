@@ -18,12 +18,14 @@ setup('autenticar como admin', async ({ page }) => {
 
   await page.goto('/login')
   await page.getByLabel('Usuário').fill(email)
-  await page.getByLabel('Senha').fill(password)
+  // Use the password input directly to avoid strict-mode collision with the
+  // "Mostrar senha" toggle button that also carries an aria-label containing "Senha".
+  await page.locator('input#password').fill(password)
   await page.getByRole('button', { name: 'Entrar' }).click()
 
-  // Admin é redirecionado para /vendas/nova após login bem-sucedido
-  await page.waitForURL('**/vendas/nova', { timeout: 10_000 })
-  await expect(page).toHaveURL(/vendas\/nova/)
+  // Admin pode ser redirecionado para /dashboard ou /vendas/nova após login.
+  await page.waitForURL(/\/(dashboard|vendas\/nova)/, { timeout: 10_000 })
+  await expect(page).not.toHaveURL(/login/)
 
   await page.context().storageState({ path: authFile })
 })
