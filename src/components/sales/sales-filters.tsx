@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useTransition } from 'react'
 import Link from 'next/link'
@@ -47,17 +47,17 @@ export function SalesFilters({
   }
 
   return (
-    <div className="p-4 border-b border-slate-100 relative">
+    <div className="p-4 border-b border-slate-100 dark:border-white/5 relative">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-[11px] font-medium text-slate-500 mb-1">
+          <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
             Pagamento
           </label>
           <select
             value={payment}
             onChange={(e) => update('payment', e.target.value)}
             disabled={isPending}
-            className="w-full h-10 px-3 border border-slate-200 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/15 focus:border-blue-600 disabled:opacity-60"
+            className="w-full h-10 px-3 border border-slate-200 dark:border-white/10 rounded-md text-sm bg-white dark:bg-slate-800/60 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-60"
             aria-label="Método de pagamento"
           >
             <option value="">Todos</option>
@@ -70,12 +70,12 @@ export function SalesFilters({
         </div>
 
         <div>
-          <label className="block text-[11px] font-medium text-slate-500 mb-1">
+          <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
             Dia
           </label>
           {lockedDay ? (
             // Funcionário: data travada em hoje, sem seletor.
-            <div className="w-full h-10 px-3 border border-slate-200 rounded-md text-sm bg-slate-50 text-slate-500 flex items-center">
+            <div className="w-full h-10 px-3 border border-slate-200 dark:border-white/10 rounded-md text-sm bg-slate-50 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 flex items-center">
               Apenas hoje
             </div>
           ) : (
@@ -84,7 +84,7 @@ export function SalesFilters({
               value={day}
               onChange={(e) => update('day', e.target.value)}
               disabled={isPending}
-              className="w-full h-10 px-3 border border-slate-200 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/15 focus:border-blue-600 disabled:opacity-60"
+              className="w-full h-10 px-3 border border-slate-200 dark:border-white/10 rounded-md text-sm bg-white dark:bg-slate-800/60 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-60"
               aria-label="Filtrar por dia"
             />
           )}
@@ -92,11 +92,11 @@ export function SalesFilters({
       </div>
 
       {hasFilters && (
-        <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+        <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <span>{isPending ? 'Aplicando...' : 'Filtros ativos'}</span>
           <Link
             href="/vendas"
-            className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 font-medium"
+            className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-medium"
           >
             <X className="h-3.5 w-3.5" />
             Limpar filtros

@@ -29,7 +29,7 @@ export function Breadcrumb() {
     <nav aria-label="Breadcrumb" className="flex items-center text-sm">
       <Link
         href="/dashboard"
-        className="flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+        className="flex items-center text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
       >
         <Home className="h-3.5 w-3.5" />
       </Link>
@@ -38,13 +38,13 @@ export function Breadcrumb() {
         const isLast = index === segments.length - 1
         return (
           <span key={href} className="flex items-center">
-            <ChevronRight className="h-3.5 w-3.5 mx-1.5 text-slate-300" />
+            <ChevronRight className="h-3.5 w-3.5 mx-1.5 text-slate-300 dark:text-slate-600" />
             {isLast ? (
-              <span className="font-medium text-slate-900">{labelFor(segment)}</span>
+              <span className="font-medium text-slate-900 dark:text-slate-100">{labelFor(segment)}</span>
             ) : (
               <Link
                 href={href}
-                className="text-slate-500 hover:text-slate-700 transition-colors"
+                className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
               >
                 {labelFor(segment)}
               </Link>

@@ -55,10 +55,10 @@ export default async function UsuariosPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
             Usuários
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Gerencie os funcionários e administradores do sistema.
           </p>
         </div>
@@ -67,50 +67,50 @@ export default async function UsuariosPage() {
 
       {/* Quick stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border-slate-200/80 p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+        <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 p-4 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-primary/5 dark:bg-primary/10 text-primary flex items-center justify-center">
             <Users className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase tracking-wide">
+            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               Total
             </p>
-            <p className="text-xl font-semibold text-slate-900 tabular-nums">
+            <p className="text-xl font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
               {users.length}
             </p>
           </div>
         </Card>
-        <Card className="border-slate-200/80 p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+        <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 p-4 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
             <ShieldCheck className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase tracking-wide">
+            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               Administradores
             </p>
-            <p className="text-xl font-semibold text-slate-900 tabular-nums">
+            <p className="text-xl font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
               {adminCount}
             </p>
           </div>
         </Card>
-        <Card className="border-slate-200/80 p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
+        <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 p-4 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-white/8 text-slate-600 dark:text-slate-400 flex items-center justify-center">
             <UserIcon className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase tracking-wide">
+            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               Funcionários
             </p>
-            <p className="text-xl font-semibold text-slate-900 tabular-nums">
+            <p className="text-xl font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
               {users.length - adminCount}
             </p>
           </div>
         </Card>
       </div>
 
-      <Card className="border-slate-200/80 shadow-sm overflow-hidden">
+      <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 shadow-sm overflow-hidden">
         {error ? (
-          <div className="p-6 text-sm text-red-700 bg-red-50 border-b border-red-100">
+          <div className="p-6 text-sm text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border-b border-red-100 dark:border-red-500/20">
             Erro ao carregar usuários: {error.message}
           </div>
         ) : null}
@@ -118,20 +118,20 @@ export default async function UsuariosPage() {
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="hover:bg-transparent border-slate-100">
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 h-11">
+              <TableRow className="hover:bg-transparent border-slate-100 dark:border-white/5">
+                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 h-11">
                   Usuário
                 </TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   Cadastrado em
                 </TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   Último acesso
                 </TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 text-right">
+                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 text-right">
                   Papel
                 </TableHead>
-                <TableHead className="w-12 text-right pr-4 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <TableHead className="w-12 text-right pr-4 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   <span className="sr-only">Ações</span>
                 </TableHead>
               </TableRow>
@@ -139,7 +139,7 @@ export default async function UsuariosPage() {
             <TableBody>
               {users.length === 0 ? (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={5} className="text-center py-12 text-slate-400">
+                  <TableCell colSpan={5} className="text-center py-12 text-slate-400 dark:text-slate-500">
                     Nenhum usuário cadastrado.
                   </TableCell>
                 </TableRow>
@@ -159,30 +159,30 @@ export default async function UsuariosPage() {
                   return (
                     <TableRow
                       key={u.user_id}
-                      className={`border-slate-100 hover:bg-slate-50/70 transition-colors ${
-                        idx % 2 === 1 ? 'bg-slate-50/30' : ''
+                      className={`border-slate-100 dark:border-white/5 hover:bg-slate-50/70 dark:hover:bg-white/5 transition-colors ${
+                        idx % 2 === 1 ? 'bg-slate-50/30 dark:bg-white/2' : ''
                       }`}
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div
-                            className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-semibold shadow-sm"
+                            className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white text-xs font-semibold shadow-sm"
                             aria-hidden
                           >
                             {ini}
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-slate-900 truncate">
+                              <span className="font-medium text-slate-900 dark:text-slate-100 truncate">
                                 {name}
                               </span>
                               {isSelf ? (
-                                <span className="inline-flex items-center rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 ring-1 ring-inset ring-blue-600/15">
+                                <span className="inline-flex items-center rounded-md bg-primary/5 px-1.5 py-0.5 text-[10px] font-medium text-primary/80 ring-1 ring-inset ring-primary/20">
                                   você
                                 </span>
                               ) : null}
                             </div>
-                            <p className="text-xs text-slate-500 truncate">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                               {isInternalEmail(u.email)
                                 ? `@${emailToUsername(u.email)}`
                                 : u.email}
@@ -190,10 +190,10 @@ export default async function UsuariosPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-slate-500 tabular-nums">
+                      <TableCell className="text-sm text-slate-500 dark:text-slate-400 tabular-nums">
                         {formatDate(u.created_at)}
                       </TableCell>
-                      <TableCell className="text-sm text-slate-500 tabular-nums">
+                      <TableCell className="text-sm text-slate-500 dark:text-slate-400 tabular-nums">
                         {formatDate(u.last_sign_in_at)}
                       </TableCell>
                       <TableCell className="text-right">
@@ -218,9 +218,9 @@ export default async function UsuariosPage() {
           </Table>
         </div>
 
-        <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50 text-xs text-slate-500">
-          Funcionários entram no sistema com o <strong>usuário</strong> e senha definidos aqui.
-          Promova a <strong>Administrador</strong> quando necessário.
+        <div className="px-4 py-3 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/3 text-xs text-slate-500 dark:text-slate-400">
+          Funcionários entram no sistema com o <strong className="text-slate-700 dark:text-slate-300">usuário</strong> e senha definidos aqui.
+          Promova a <strong className="text-slate-700 dark:text-slate-300">Administrador</strong> quando necessário.
         </div>
       </Card>
 

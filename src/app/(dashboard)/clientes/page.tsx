@@ -16,7 +16,7 @@ function DebtBadge({ customer }: { customer: CustomerBalance }) {
 
   if (debt <= 0) {
     return (
-      <div className="flex items-center gap-1.5 text-emerald-700">
+      <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
         <CheckCircle2 className="h-4 w-4 shrink-0" />
         <span className="text-sm font-medium">Sem débito</span>
       </div>
@@ -40,11 +40,11 @@ function DebtBadge({ customer }: { customer: CustomerBalance }) {
 
   return (
     <div className="space-y-1">
-      <div className="flex items-center gap-1.5 text-red-600">
+      <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
         <AlertCircle className="h-4 w-4 shrink-0" />
         <span className="text-base font-bold tabular-nums">{formatCurrency(debt)}</span>
       </div>
-      <p className="text-xs text-slate-500">{label}</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
     </div>
   )
 }
@@ -55,18 +55,18 @@ export default async function ClientesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Clientes / Fiado</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Clientes / Fiado</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
           {customers.length} {customers.length === 1 ? 'cliente cadastrado' : 'clientes cadastrados'}
         </p>
       </div>
 
       {customers.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-20 text-slate-400">
-          <div className="h-14 w-14 rounded-full bg-slate-100 flex items-center justify-center">
-            <UserRound className="h-7 w-7 text-slate-400" />
+        <div className="flex flex-col items-center gap-3 py-20 text-slate-400 dark:text-slate-500">
+          <div className="h-14 w-14 rounded-full bg-slate-100 dark:bg-slate-800/60 flex items-center justify-center">
+            <UserRound className="h-7 w-7 text-slate-400 dark:text-slate-500" />
           </div>
-          <p className="text-sm font-medium text-slate-600">Nenhum cliente cadastrado</p>
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Nenhum cliente cadastrado</p>
           <p className="text-xs text-center max-w-xs">
             Clientes são criados automaticamente ao registrar uma venda fiada.
           </p>
@@ -76,14 +76,14 @@ export default async function ClientesPage() {
           {customers.map((customer) => (
             <div
               key={customer.id}
-              className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 flex flex-col gap-3 hover:shadow-md transition-shadow"
+              className="bg-white dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-white/8 shadow-sm dark:shadow-black/20 p-4 flex flex-col gap-3 hover:shadow-md dark:hover:shadow-black/30 transition-shadow"
             >
               {/* Header */}
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="font-semibold text-slate-900 truncate">{customer.full_name}</p>
+                  <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">{customer.full_name}</p>
                   {customer.phone && (
-                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
                       <Phone className="h-3 w-3 shrink-0" />
                       {customer.phone}
                     </p>
@@ -93,16 +93,16 @@ export default async function ClientesPage() {
               </div>
 
               {/* Totals */}
-              <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 rounded-lg p-2.5">
+              <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-white/5 rounded-lg p-2.5">
                 <div>
-                  <p className="text-slate-500">Total fiado</p>
-                  <p className="font-semibold text-slate-800 tabular-nums mt-0.5">
+                  <p className="text-slate-500 dark:text-slate-400">Total fiado</p>
+                  <p className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums mt-0.5">
                     {formatCurrency(customer.total_fiado)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-slate-500">Total pago</p>
-                  <p className="font-semibold text-emerald-700 tabular-nums mt-0.5">
+                  <p className="text-slate-500 dark:text-slate-400">Total pago</p>
+                  <p className="font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums mt-0.5">
                     {formatCurrency(customer.total_paid)}
                   </p>
                 </div>
@@ -113,7 +113,7 @@ export default async function ClientesPage() {
                 variant="outline"
                 size="sm"
                 asChild
-                className="w-full border-slate-200 text-slate-700 hover:bg-slate-50"
+                className="w-full border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5"
               >
                 <Link href={`/clientes/${customer.id}`}>Ver detalhes</Link>
               </Button>

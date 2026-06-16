@@ -1,9 +1,9 @@
-export interface RecentProfile {
+﻿export interface RecentProfile {
   username: string
   lastLogin: string
 }
 
-const KEY = 'vendas_recent_profiles'
+const KEY = 'nexsales_recent_profiles'
 const MAX = 2
 
 export function getRecentProfiles(): RecentProfile[] {
@@ -34,7 +34,7 @@ export function getInitials(username: string): string {
 }
 
 const GRADIENTS = [
-  'from-blue-500 to-blue-700',
+  'from-primary to-primary/70',
   'from-violet-500 to-violet-700',
   'from-emerald-500 to-emerald-700',
   'from-rose-500 to-rose-700',

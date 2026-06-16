@@ -1,3 +1,4 @@
+import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { brDayRangeUTC } from '@/lib/utils/datetime'
 import type { PaymentMethod, Sale, SaleWithItems } from '@/types/database'

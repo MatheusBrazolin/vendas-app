@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ShoppingCart, Loader2, AlertCircle, Eye, EyeOff, ArrowLeft, Plus } from 'lucide-react'
+import { Loader2, AlertCircle, Eye, EyeOff, ArrowLeft, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -105,11 +105,14 @@ function LoginPageContent() {
   }
 
   const MobileBrand = () => (
-    <div className="flex lg:hidden items-center gap-2 mb-10">
-      <div className="h-9 w-9 rounded-lg bg-blue-600 flex items-center justify-center shadow-sm">
-        <ShoppingCart className="h-4 w-4 text-white" />
+    <div className="flex lg:hidden items-center gap-2.5 mb-10">
+      <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center shadow-md shadow-primary/20">
+        <span className="text-white font-extrabold text-sm select-none">N</span>
       </div>
-      <span className="font-semibold text-slate-900">VendasApp</span>
+      <div className="flex flex-col leading-tight">
+        <span className="font-bold text-slate-900">NexSales</span>
+        <span className="text-[9px] uppercase tracking-widest text-slate-400">Smart Sales</span>
+      </div>
     </div>
   )
 
@@ -120,7 +123,7 @@ function LoginPageContent() {
         <MobileBrand />
 
         <div className="mb-8">
-          <h2 className="text-3xl font-semibold tracking-tight text-slate-900">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 font-heading">
             Quem está acessando?
           </h2>
           <p className="mt-2 text-sm text-slate-500">Selecione seu perfil para continuar.</p>
@@ -131,10 +134,10 @@ function LoginPageContent() {
             <div key={profile.username} className="relative group">
               <button
                 onClick={() => handleProfileSelect(profile.username)}
-                className="w-full flex flex-col items-center gap-2.5 p-3 rounded-2xl hover:bg-slate-50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                className="w-full flex flex-col items-center gap-2.5 p-3 rounded-2xl hover:bg-slate-50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 <div
-                  className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${getAvatarGradient(profile.username)} flex items-center justify-center text-white text-xl font-bold shadow-md group-hover:scale-105 group-hover:shadow-lg transition-all`}
+                  className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${getAvatarGradient(profile.username)} flex items-center justify-center text-white text-xl font-bold shadow-md group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-primary/20 transition-all`}
                 >
                   {getInitials(profile.username)}
                 </div>
@@ -147,9 +150,9 @@ function LoginPageContent() {
 
           <button
             onClick={() => setMode('full-form')}
-            className="group flex flex-col items-center gap-2.5 p-3 rounded-2xl hover:bg-slate-50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="group flex flex-col items-center gap-2.5 p-3 rounded-2xl hover:bg-slate-50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
-            <div className="h-16 w-16 rounded-2xl border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 group-hover:border-slate-400 group-hover:text-slate-500 group-hover:scale-105 transition-all">
+            <div className="h-16 w-16 rounded-2xl border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 group-hover:border-primary/40 group-hover:text-primary/60 group-hover:scale-105 transition-all">
               <Plus className="h-6 w-6" />
             </div>
             <p className="text-xs text-slate-500">Outra conta</p>
@@ -175,11 +178,11 @@ function LoginPageContent() {
 
         <div className="flex flex-col items-center mb-8">
           <div
-            className={`h-20 w-20 rounded-3xl bg-gradient-to-br ${getAvatarGradient(selected)} flex items-center justify-center text-white text-2xl font-bold shadow-lg`}
+            className={`h-20 w-20 rounded-3xl bg-gradient-to-br ${getAvatarGradient(selected)} flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-primary/20`}
           >
             {getInitials(selected)}
           </div>
-          <p className="mt-3 text-xl font-semibold text-slate-900">{selected}</p>
+          <p className="mt-3 text-xl font-bold text-slate-900">{selected}</p>
           <p className="text-sm text-slate-500 mt-0.5">Digite sua senha para entrar</p>
         </div>
 
@@ -192,7 +195,7 @@ function LoginPageContent() {
               onChange={(e) => setProfilePwd(e.target.value)}
               placeholder="••••••••"
               autoComplete="current-password"
-              className="h-11 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600/20 focus-visible:border-blue-600 pr-10"
+              className="h-11 border-slate-200 focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary pr-10"
             />
             <button
               type="button"
@@ -206,7 +209,7 @@ function LoginPageContent() {
           </div>
 
           {serverError && (
-            <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
               <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
               <span>{serverError}</span>
             </div>
@@ -214,7 +217,10 @@ function LoginPageContent() {
 
           <Button
             type="submit"
-            className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm"
+            className="w-full h-11 font-semibold shadow-sm shadow-primary/20 transition-all"
+            style={{
+              background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+            }}
             disabled={!profilePwd || isSubmitting}
           >
             {isSubmitting ? (
@@ -229,7 +235,7 @@ function LoginPageContent() {
         </form>
 
         <p className="mt-5 text-center">
-          <Link href="/esqueceu-senha" className="text-xs text-blue-600 hover:text-blue-700">
+          <Link href="/esqueceu-senha" className="text-xs text-primary hover:text-primary/80">
             Esqueceu a senha?
           </Link>
         </p>
@@ -253,11 +259,12 @@ function LoginPageContent() {
       )}
 
       <div className="mb-8">
-        <h2 className="text-3xl font-semibold tracking-tight text-slate-900">
-          Bem-vindo de volta
+        <h2 className="text-3xl font-bold tracking-tight text-slate-900 font-heading">
+          Bem-vindo ao{' '}
+          <span className="text-primary">NexSales</span>
         </h2>
-        <p className="mt-2 text-slate-500">
-          Entre com suas credenciais para acessar o painel.
+        <p className="mt-2 text-slate-500 text-sm leading-relaxed">
+          Faça login para continuar.
         </p>
       </div>
 
@@ -273,7 +280,7 @@ function LoginPageContent() {
             autoComplete="username"
             autoCapitalize="none"
             spellCheck={false}
-            className="h-11 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600/20 focus-visible:border-blue-600"
+            className="h-11 border-slate-200 focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary"
             {...register('username')}
           />
           {errors.username && (
@@ -289,7 +296,7 @@ function LoginPageContent() {
             <Label htmlFor="password" className="text-slate-700 text-sm font-medium">
               Senha
             </Label>
-            <Link href="/esqueceu-senha" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+            <Link href="/esqueceu-senha" className="text-xs text-primary hover:text-primary/80 font-medium">
               Esqueceu?
             </Link>
           </div>
@@ -299,7 +306,7 @@ function LoginPageContent() {
               type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
               autoComplete="current-password"
-              className="h-11 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600/20 focus-visible:border-blue-600 pr-10"
+              className="h-11 border-slate-200 focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary pr-10"
               {...register('password')}
             />
             <button
@@ -321,7 +328,7 @@ function LoginPageContent() {
         </div>
 
         {serverError && (
-          <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+          <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
             <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
             <span>{serverError}</span>
           </div>
@@ -329,7 +336,10 @@ function LoginPageContent() {
 
         <Button
           type="submit"
-          className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm transition-colors"
+          className="w-full h-11 font-semibold shadow-sm shadow-primary/20 transition-all"
+          style={{
+            background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+          }}
           disabled={isFormSubmitting}
         >
           {isFormSubmitting ? (

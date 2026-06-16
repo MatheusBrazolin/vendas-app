@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import {
   useEffect,
@@ -271,7 +271,7 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
                   disabled={isLookingUp}
                 />
                 {isLookingUp ? (
-                  <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500 animate-spin" />
+                  <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/80 animate-spin" />
                 ) : (
                   <ScanBarcode className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 pointer-events-none" />
                 )}
@@ -466,7 +466,7 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
             <Button
               type="submit"
               disabled={isPending}
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+              className="bg-primary hover:bg-primary/90 text-white shadow-sm"
             >
               {isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

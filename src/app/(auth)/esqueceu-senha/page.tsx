@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import Link from 'next/link'
@@ -40,7 +40,7 @@ export default function EsqueceuSenhaPage() {
     <div className="w-full max-w-sm">
       {/* Mobile brand */}
       <div className="flex lg:hidden items-center gap-2 mb-10">
-        <div className="h-9 w-9 rounded-lg bg-blue-600 flex items-center justify-center">
+        <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
           <ShoppingCart className="h-4 w-4 text-white" />
         </div>
         <span className="font-semibold text-slate-900">VendasApp</span>
@@ -62,7 +62,7 @@ export default function EsqueceuSenhaPage() {
           </div>
           <Link
             href="/login"
-            className="inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
+            className="inline-block text-sm font-medium text-primary hover:text-primary/80"
           >
             ← Voltar para o login
           </Link>
@@ -88,7 +88,7 @@ export default function EsqueceuSenhaPage() {
                 type="email"
                 placeholder="seu@email.com"
                 autoComplete="email"
-                className="h-11 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600/20 focus-visible:border-blue-600"
+                className="h-11 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600/20 focus-visible:border-primary"
                 {...register('email')}
               />
               {errors.email && (
@@ -108,7 +108,7 @@ export default function EsqueceuSenhaPage() {
 
             <Button
               type="submit"
-              className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm transition-colors"
+              className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-medium shadow-sm transition-colors"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -125,7 +125,7 @@ export default function EsqueceuSenhaPage() {
           <p className="mt-6 text-center text-sm text-slate-500">
             <Link
               href="/login"
-              className="font-medium text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
+              className="font-medium text-primary hover:text-primary/80 inline-flex items-center gap-1"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               Voltar para o login

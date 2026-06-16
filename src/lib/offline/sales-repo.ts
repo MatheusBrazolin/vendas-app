@@ -10,6 +10,7 @@
  * Browser-only: `getDB()` throws on the server. Import from client components.
  */
 
+import 'client-only'
 import { getDB, type PendingSale, type PendingSaleItem } from './db'
 import { syncProducts } from './sync'
 import { createSale, type CreateSaleResult } from '@/app/(dashboard)/vendas/actions'

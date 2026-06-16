@@ -1,4 +1,4 @@
-import { clsx, type ClassValue } from 'clsx'
+﻿import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
 /**
@@ -6,7 +6,7 @@ import { twMerge } from 'tailwind-merge'
  * conflicting utilities (later wins) and dropping falsy values.
  *
  * @example
- *   cn('px-2 py-1', isActive && 'bg-blue-500')
+ *   cn('px-2 py-1', isActive && 'bg-primary/90')
  *   cn({ 'opacity-50': disabled }, className)
  */
 export function cn(...inputs: ClassValue[]) {

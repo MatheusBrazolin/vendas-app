@@ -12,6 +12,7 @@
  * around `window.indexedDB`, which doesn't exist on the server.
  */
 
+import 'client-only'
 import Dexie, { type Table } from 'dexie'
 import type { Product, Category, PaymentMethod } from '@/types/database'
 

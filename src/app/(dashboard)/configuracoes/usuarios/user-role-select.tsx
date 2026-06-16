@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useTransition } from 'react'
 import { toast } from 'sonner'
@@ -77,7 +77,7 @@ export function UserRoleSelect({ userId, role, isSelf }: UserRoleSelectProps) {
         className={
           'inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed ' +
           (isAdmin
-            ? 'bg-blue-600 text-white shadow-sm'
+            ? 'bg-primary text-white shadow-sm'
             : 'text-slate-500 hover:bg-slate-50 disabled:opacity-50')
         }
         title="Definir como Administrador"

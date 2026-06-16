@@ -1,3 +1,4 @@
+import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import type { Sale } from '@/types/database'
 import { startOfMonth, endOfMonth, subDays } from 'date-fns'

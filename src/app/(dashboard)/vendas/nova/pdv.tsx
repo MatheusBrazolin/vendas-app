@@ -60,11 +60,8 @@ export function PDV() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('')
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  // Set after a sale is saved offline — drives the provisional receipt banner.
   const [offlineSale, setOfflineSale] = useState<OfflineSaleConfirmation | null>(null)
-  // Track whether the user has tried to confirm the sale at least once.
   const [triedSubmit, setTriedSubmit] = useState(false)
-  // Free-text input bound to the "valor recebido" field.
   const [cashReceivedRaw, setCashReceivedRaw] = useState('')
 
   // --- Fiado: seleção de cliente ---
@@ -87,10 +84,6 @@ export function PDV() {
   )
   const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
 
-  // Parse the "valor recebido" string into a number. Accept both "12,50"
-  // (pt-BR) and "12.50" so the cashier can type whichever feels natural.
-  // Returns NaN when the field is empty or unparseable, which we treat as
-  // "not entered yet" for UI purposes.
   const cashReceived = cashReceivedRaw.trim()
     ? parseFloat(cashReceivedRaw.replace(',', '.'))
     : NaN
@@ -133,7 +126,6 @@ export function PDV() {
     setCartItems((prev) => prev.filter((item) => item.product.id !== productId))
   }
 
-  // Busca debounced de clientes ao digitar
   useEffect(() => {
     if (paymentMethod !== 'fiado') return
     if (!customerQuery.trim()) {
@@ -206,7 +198,6 @@ export function PDV() {
       toast.error('Selecione um cliente para a venda fiada')
       return
     }
-    // Fiado não pode ser salvo offline (o cliente precisa existir no servidor)
     if (paymentMethod === 'fiado' && typeof navigator !== 'undefined' && !navigator.onLine) {
       toast.error('Vendas fiadas precisam de conexão com a internet')
       return
@@ -214,8 +205,6 @@ export function PDV() {
 
     setIsSubmitting(true)
 
-    // One UUID per sale: used as the server's idempotency key so a queued sale
-    // flushed after a flaky reconnect is never inserted twice.
     const clientUuid = crypto.randomUUID()
     const rpcItems = cartItems.map((item) => ({
       product_id: item.product.id,
@@ -223,17 +212,12 @@ export function PDV() {
       ...(item.customPrice !== undefined ? { unit_price: item.customPrice } : {}),
     }))
 
-    // `finally` guarantees the button is re-enabled no matter which path (or
-    // unexpected throw) we take, so a sale can never lock the PDV.
     try {
-      // Offline → straight to the local queue, no server round-trip.
       if (typeof navigator !== 'undefined' && !navigator.onLine) {
         await saveOffline(clientUuid)
         return
       }
 
-      // Online → try the server. A network failure mid-request (action throws)
-      // falls back to the queue; a business rejection (e.g. stock) is shown as-is.
       try {
         const result = await createSale({
           payment_method: paymentMethod,
@@ -251,7 +235,6 @@ export function PDV() {
         toast.success('Venda registrada com sucesso!')
         router.push(`/vendas/${result.saleId}`)
       } catch {
-        // Lost connection while submitting — don't drop the sale, queue it.
         await saveOffline(clientUuid)
       }
     } finally {
@@ -259,7 +242,6 @@ export function PDV() {
     }
   }
 
-  /** Persist the current cart as an offline sale and show the confirmation. */
   async function saveOffline(clientUuid: string) {
     if (!paymentMethod) return
     try {
@@ -297,7 +279,6 @@ export function PDV() {
     toast.success('Venda salva offline — será enviada ao reconectar.')
   }
 
-  /** Print the provisional 80mm receipt for the offline sale on screen. */
   function handlePrintOffline() {
     if (!offlineSale) return
     const ok = printReceipt({
@@ -311,7 +292,6 @@ export function PDV() {
     }
   }
 
-  /** Clear the form for the next sale. */
   function resetForm() {
     setCartItems([])
     setPaymentMethod('')
@@ -329,39 +309,37 @@ export function PDV() {
   const canSubmit = !isSubmitting && cartItems.length > 0
 
   return (
-    // pb-24 no mobile: garante que o conteúdo final do scroll não fique
-    // escondido atrás da barra sticky de checkout (que mede ~80px).
     <div className="space-y-4 pb-24 lg:pb-0">
       {offlineSale && (
-        <div className="relative rounded-xl border border-amber-300 bg-amber-50 p-4 shadow-sm">
+        <div className="relative rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-4 shadow-sm">
           <button
             type="button"
             onClick={() => setOfflineSale(null)}
             aria-label="Fechar"
-            className="absolute right-3 top-3 text-amber-500 hover:text-amber-700"
+            className="absolute right-3 top-3 text-amber-500 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-200"
           >
             <X className="h-4 w-4" />
           </button>
-          <div className="flex items-center gap-2 text-amber-900">
+          <div className="flex items-center gap-2 text-amber-900 dark:text-amber-300">
             <CloudOff className="h-5 w-5" />
             <p className="font-semibold">Venda salva offline</p>
           </div>
-          <p className="mt-1 text-sm text-amber-800">
+          <p className="mt-1 text-sm text-amber-800 dark:text-amber-400">
             Recibo provisório — será enviada ao servidor automaticamente quando a
             conexão voltar.
           </p>
-          <div className="mt-3 rounded-lg bg-white/70 border border-amber-200 divide-y divide-amber-100 text-sm">
+          <div className="mt-3 rounded-lg bg-white/70 dark:bg-white/5 border border-amber-200 dark:border-amber-500/20 divide-y divide-amber-100 dark:divide-white/5 text-sm">
             {offlineSale.items.map((item, idx) => (
               <div key={idx} className="flex items-center justify-between px-3 py-1.5">
-                <span className="text-slate-700">
+                <span className="text-slate-700 dark:text-slate-300">
                   {item.quantity}× {item.name}
                 </span>
-                <span className="tabular-nums text-slate-600">
+                <span className="tabular-nums text-slate-600 dark:text-slate-400">
                   {formatCurrency(item.unit_price * item.quantity)}
                 </span>
               </div>
             ))}
-            <div className="flex items-center justify-between px-3 py-2 font-semibold text-slate-900">
+            <div className="flex items-center justify-between px-3 py-2 font-semibold text-slate-900 dark:text-slate-100">
               <span>Total · {offlineSale.paymentLabel}</span>
               <span className="tabular-nums">{formatCurrency(offlineSale.total)}</span>
             </div>
@@ -369,7 +347,7 @@ export function PDV() {
           <Button
             onClick={handlePrintOffline}
             variant="outline"
-            className="mt-3 border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
+            className="mt-3 border-amber-300 dark:border-amber-500/30 bg-white dark:bg-amber-500/10 text-amber-900 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/20"
           >
             <Printer className="h-4 w-4 mr-1.5" />
             Imprimir recibo
@@ -378,360 +356,348 @@ export function PDV() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      <div className="lg:col-span-2 space-y-4">
-        <Card className="border-slate-200/80 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <Search className="h-4 w-4 text-slate-500" />
-              Buscar produto
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ProductSearch onAdd={handleAddItem} />
-          </CardContent>
-        </Card>
+        <div className="lg:col-span-2 space-y-4">
+          <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Search className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                Buscar produto
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ProductSearch onAdd={handleAddItem} />
+            </CardContent>
+          </Card>
 
-        <Card className="border-slate-200/80 shadow-sm">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <ShoppingCart className="h-4 w-4 text-slate-500" />
-              Carrinho
-            </CardTitle>
-            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-              {itemCount} {itemCount === 1 ? 'item' : 'itens'}
-            </span>
-          </CardHeader>
-          <CardContent>
-            <Cart
-              items={cartItems}
-              onUpdateQty={handleUpdateQty}
-              onUpdatePrice={handleUpdatePrice}
-              onRemove={handleRemove}
-            />
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 shadow-sm">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <ShoppingCart className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                Carrinho
+              </CardTitle>
+              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-white/10 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-300">
+                {itemCount} {itemCount === 1 ? 'item' : 'itens'}
+              </span>
+            </CardHeader>
+            <CardContent>
+              <Cart
+                items={cartItems}
+                onUpdateQty={handleUpdateQty}
+                onUpdatePrice={handleUpdatePrice}
+                onRemove={handleRemove}
+              />
+            </CardContent>
+          </Card>
+        </div>
 
-      <div>
-        <Card className="lg:sticky lg:top-24 border-slate-200/80 shadow-sm overflow-hidden">
-          <CardHeader className="bg-slate-50/60 border-b border-slate-100 pb-3">
-            <CardTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <Receipt className="h-4 w-4 text-slate-500" />
-              Finalizar venda
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5 pt-5">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-slate-700 flex items-center gap-1.5">
-                <CreditCard className="h-3.5 w-3.5 text-slate-500" />
-                Método de pagamento <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={paymentMethod}
-                items={PAYMENT_OPTIONS}
-                onValueChange={(v) => {
-                  const next = v as PaymentMethod
-                  setPaymentMethod(next)
-                  if (next !== 'cash') setCashReceivedRaw('')
-                  if (next !== 'fiado') {
-                    setSelectedCustomer(null)
-                    setCustomerQuery('')
-                    setCustomerResults([])
-                    setShowNewCustomerForm(false)
-                  }
-                }}
-              >
-                <SelectTrigger
-                  aria-invalid={triedSubmit && paymentMissing}
-                  className={
-                    triedSubmit && paymentMissing
-                      ? 'h-10 border-red-500 ring-2 ring-red-100'
-                      : 'h-10 border-slate-200'
-                  }
+        <div>
+          <Card className="lg:sticky lg:top-24 border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 shadow-sm overflow-hidden">
+            <CardHeader className="bg-slate-50/60 dark:bg-white/3 border-b border-slate-100 dark:border-white/5 pb-3">
+              <CardTitle className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                Finalizar venda
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5 pt-5">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <CreditCard className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                  Método de pagamento <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={paymentMethod}
+                  items={PAYMENT_OPTIONS}
+                  onValueChange={(v) => {
+                    const next = v as PaymentMethod
+                    setPaymentMethod(next)
+                    if (next !== 'cash') setCashReceivedRaw('')
+                    if (next !== 'fiado') {
+                      setSelectedCustomer(null)
+                      setCustomerQuery('')
+                      setCustomerResults([])
+                      setShowNewCustomerForm(false)
+                    }
+                  }}
                 >
-                  <SelectValue placeholder="Selecione..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAYMENT_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {triedSubmit && paymentMissing && (
-                <p className="text-red-500 text-xs">
-                  Selecione o método de pagamento para finalizar.
-                </p>
-              )}
-            </div>
-
-            {paymentMethod === 'cash' && (
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 space-y-3">
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="cash-received"
-                    className="text-xs font-medium text-emerald-900 flex items-center gap-1.5"
-                  >
-                    <Banknote className="h-3.5 w-3.5 text-emerald-700" />
-                    Valor recebido
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-500 pointer-events-none">
-                      R$
-                    </span>
-                    <Input
-                      id="cash-received"
-                      type="text"
-                      inputMode="decimal"
-                      value={cashReceivedRaw}
-                      onChange={(e) => {
-                        // Only accept digits and a single comma/period — keeps
-                        // the field tidy without fighting the user mid-typing.
-                        const cleaned = e.target.value.replace(/[^\d,.]/g, '')
-                        setCashReceivedRaw(cleaned)
-                      }}
-                      placeholder="0,00"
-                      autoComplete="off"
-                      className="h-10 pl-9 bg-white border-emerald-200 focus-visible:border-emerald-500 focus-visible:ring-emerald-200"
-                    />
-                  </div>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {[total, 50, 100, 200].map((preset, idx) => (
-                      <button
-                        key={`${preset}-${idx}`}
-                        type="button"
-                        onClick={() => setCashReceivedRaw(preset.toFixed(2).replace('.', ','))}
-                        className="px-2 py-0.5 text-[11px] font-medium rounded-md bg-white border border-emerald-200 text-emerald-800 hover:bg-emerald-100 transition-colors"
-                      >
-                        {idx === 0 ? 'Valor exato' : formatCurrency(preset)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {hasCashEntered && (
-                  // Destaque grande do troco — o dono da loja pediu pra ser
-                  // bem visível porque o operador precisa bater o olho e ver
-                  // imediatamente quanto devolver. Fundo cheio (não translúcido)
-                  // com cor vívida, valor em 4xl, label em caixa alta acima.
-                  <div
+                  <SelectTrigger
+                    aria-invalid={triedSubmit && paymentMissing}
                     className={
-                      cashShort
-                        ? 'rounded-xl bg-red-600 px-4 py-4 shadow-md shadow-red-900/10 text-white'
-                        : 'rounded-xl bg-emerald-600 px-4 py-4 shadow-md shadow-emerald-900/10 text-white'
+                      triedSubmit && paymentMissing
+                        ? 'h-10 border-red-500 ring-2 ring-red-100 dark:ring-red-900/30'
+                        : 'h-10 border-slate-200 dark:border-white/10 dark:bg-slate-800/60 dark:text-slate-200'
                     }
                   >
-                    <p className="text-[11px] font-semibold uppercase tracking-wider opacity-90">
-                      {cashShort ? 'Falta receber' : 'Troco a devolver'}
-                    </p>
-                    <p className="text-4xl font-bold tabular-nums leading-tight mt-1">
-                      {formatCurrency(Math.abs(change))}
-                    </p>
-                  </div>
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAYMENT_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {triedSubmit && paymentMissing && (
+                  <p className="text-red-500 text-xs">
+                    Selecione o método de pagamento para finalizar.
+                  </p>
                 )}
               </div>
-            )}
 
-            {paymentMethod === 'fiado' && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3 space-y-3">
-                <Label className="text-xs font-medium text-amber-900 flex items-center gap-1.5">
-                  <UserRound className="h-3.5 w-3.5 text-amber-700" />
-                  Cliente <span className="text-red-500">*</span>
-                </Label>
-
-                {selectedCustomer ? (
-                  <div className="rounded-md bg-white border border-amber-200 px-3 py-2 space-y-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-800 truncate">{selectedCustomer.full_name}</p>
-                        {selectedCustomer.phone && (
-                          <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                            <Phone className="h-3 w-3" />
-                            {selectedCustomer.phone}
-                          </p>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => { setSelectedCustomer(null); setCustomerQuery('') }}
-                        className="text-slate-400 hover:text-slate-700 shrink-0"
-                        aria-label="Trocar cliente"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                    {selectedCustomer.current_debt > 0 ? (
-                      <p className="text-xs font-medium text-red-600 bg-red-50 rounded px-2 py-1">
-                        Possui {formatCurrency(selectedCustomer.current_debt)} em aberto
-                      </p>
-                    ) : (
-                      <p className="text-xs font-medium text-emerald-700 bg-emerald-50 rounded px-2 py-1">
-                        Sem débitos pendentes
-                      </p>
-                    )}
-                  </div>
-                ) : showNewCustomerForm ? (
-                  <div className="space-y-2">
-                    <Input
-                      placeholder="Nome completo *"
-                      value={newCustomerName}
-                      onChange={(e) => setNewCustomerName(e.target.value)}
-                      className="h-9 text-sm border-amber-200 bg-white"
-                      autoFocus
-                    />
-                    <Input
-                      placeholder="Telefone *"
-                      value={newCustomerPhone}
-                      onChange={(e) => setNewCustomerPhone(formatPhone(e.target.value))}
-                      inputMode="numeric"
-                      className="h-9 text-sm border-amber-200 bg-white"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="flex-1 h-8 bg-amber-600 hover:bg-amber-700 text-white text-xs"
-                        disabled={!newCustomerName.trim() || !newCustomerPhone.trim() || isCreatingCustomer}
-                        onClick={handleCreateCustomer}
-                      >
-                        {isCreatingCustomer ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Cadastrar'}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8 text-xs border-amber-200"
-                        onClick={() => setShowNewCustomerForm(false)}
-                      >
-                        Cancelar
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
+              {paymentMethod === 'cash' && (
+                <div className="rounded-lg border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/60 dark:bg-emerald-500/8 p-3 space-y-3">
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="cash-received"
+                      className="text-xs font-medium text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5"
+                    >
+                      <Banknote className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
+                      Valor recebido
+                    </Label>
                     <div className="relative">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-500 dark:text-slate-400 pointer-events-none">
+                        R$
+                      </span>
                       <Input
-                        placeholder="Buscar por nome ou telefone..."
-                        value={customerQuery}
-                        onChange={(e) => setCustomerQuery(e.target.value)}
-                        className="h-9 pl-8 text-sm border-amber-200 bg-white"
-                        autoFocus
+                        id="cash-received"
+                        type="text"
+                        inputMode="decimal"
+                        value={cashReceivedRaw}
+                        onChange={(e) => {
+                          const cleaned = e.target.value.replace(/[^\d,.]/g, '')
+                          setCashReceivedRaw(cleaned)
+                        }}
+                        placeholder="0,00"
+                        autoComplete="off"
+                        className="h-10 pl-9 bg-white dark:bg-slate-800/60 border-emerald-200 dark:border-emerald-500/20 dark:text-slate-200 focus-visible:border-emerald-500 focus-visible:ring-emerald-200 dark:focus-visible:ring-emerald-900/30"
                       />
-                      {isSearchingCustomer && (
-                        <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-slate-400" />
+                    </div>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {[total, 50, 100, 200].map((preset, idx) => (
+                        <button
+                          key={`${preset}-${idx}`}
+                          type="button"
+                          onClick={() => setCashReceivedRaw(preset.toFixed(2).replace('.', ','))}
+                          className="px-2 py-0.5 text-[11px] font-medium rounded-md bg-white dark:bg-slate-700/50 border border-emerald-200 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/15 transition-colors"
+                        >
+                          {idx === 0 ? 'Valor exato' : formatCurrency(preset)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {hasCashEntered && (
+                    <div
+                      className={
+                        cashShort
+                          ? 'rounded-xl bg-red-600 px-4 py-4 shadow-md shadow-red-900/10 text-white'
+                          : 'rounded-xl bg-emerald-600 px-4 py-4 shadow-md shadow-emerald-900/10 text-white'
+                      }
+                    >
+                      <p className="text-[11px] font-semibold uppercase tracking-wider opacity-90">
+                        {cashShort ? 'Falta receber' : 'Troco a devolver'}
+                      </p>
+                      <p className="text-4xl font-bold tabular-nums leading-tight mt-1">
+                        {formatCurrency(Math.abs(change))}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {paymentMethod === 'fiado' && (
+                <div className="rounded-lg border border-amber-200 dark:border-amber-500/20 bg-amber-50/60 dark:bg-amber-500/8 p-3 space-y-3">
+                  <Label className="text-xs font-medium text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                    <UserRound className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />
+                    Cliente <span className="text-red-500">*</span>
+                  </Label>
+
+                  {selectedCustomer ? (
+                    <div className="rounded-md bg-white dark:bg-white/5 border border-amber-200 dark:border-amber-500/20 px-3 py-2 space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{selectedCustomer.full_name}</p>
+                          {selectedCustomer.phone && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                              <Phone className="h-3 w-3" />
+                              {selectedCustomer.phone}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setSelectedCustomer(null); setCustomerQuery('') }}
+                          className="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 shrink-0"
+                          aria-label="Trocar cliente"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                      {selectedCustomer.current_debt > 0 ? (
+                        <p className="text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 rounded px-2 py-1">
+                          Possui {formatCurrency(selectedCustomer.current_debt)} em aberto
+                        </p>
+                      ) : (
+                        <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 rounded px-2 py-1">
+                          Sem débitos pendentes
+                        </p>
                       )}
                     </div>
+                  ) : showNewCustomerForm ? (
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Nome completo *"
+                        value={newCustomerName}
+                        onChange={(e) => setNewCustomerName(e.target.value)}
+                        className="h-9 text-sm border-amber-200 dark:border-amber-500/20 bg-white dark:bg-slate-800/60 dark:text-slate-200 dark:placeholder:text-slate-500"
+                        autoFocus
+                      />
+                      <Input
+                        placeholder="Telefone *"
+                        value={newCustomerPhone}
+                        onChange={(e) => setNewCustomerPhone(formatPhone(e.target.value))}
+                        inputMode="numeric"
+                        className="h-9 text-sm border-amber-200 dark:border-amber-500/20 bg-white dark:bg-slate-800/60 dark:text-slate-200 dark:placeholder:text-slate-500"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="flex-1 h-8 bg-amber-600 hover:bg-amber-700 text-white text-xs"
+                          disabled={!newCustomerName.trim() || !newCustomerPhone.trim() || isCreatingCustomer}
+                          onClick={handleCreateCustomer}
+                        >
+                          {isCreatingCustomer ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Cadastrar'}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs border-amber-200 dark:border-amber-500/20 dark:text-slate-300 dark:hover:bg-white/5"
+                          onClick={() => setShowNewCustomerForm(false)}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                        <Input
+                          placeholder="Buscar por nome ou telefone..."
+                          value={customerQuery}
+                          onChange={(e) => setCustomerQuery(e.target.value)}
+                          className="h-9 pl-8 text-sm border-amber-200 dark:border-amber-500/20 bg-white dark:bg-slate-800/60 dark:text-slate-200 dark:placeholder:text-slate-500"
+                          autoFocus
+                        />
+                        {isSearchingCustomer && (
+                          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-slate-400 dark:text-slate-500" />
+                        )}
+                      </div>
 
-                    {customerResults.length > 0 && (
-                      <ul className="rounded-md border border-amber-200 bg-white divide-y divide-slate-100 max-h-36 overflow-y-auto">
-                        {customerResults.map((c) => (
-                          <li key={c.id}>
-                            <button
-                              type="button"
-                              className="w-full text-left px-3 py-2 hover:bg-amber-50 transition-colors"
-                              onClick={() => { setSelectedCustomer(c); setCustomerQuery(''); setCustomerResults([]) }}
-                            >
-                              <p className="text-sm font-medium text-slate-800">{c.full_name}</p>
-                              {c.phone && <p className="text-xs text-slate-500">{c.phone}</p>}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                      {customerResults.length > 0 && (
+                        <ul className="rounded-md border border-amber-200 dark:border-amber-500/20 bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-white/5 max-h-36 overflow-y-auto">
+                          {customerResults.map((c) => (
+                            <li key={c.id}>
+                              <button
+                                type="button"
+                                className="w-full text-left px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors"
+                                onClick={() => { setSelectedCustomer(c); setCustomerQuery(''); setCustomerResults([]) }}
+                              >
+                                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{c.full_name}</p>
+                                {c.phone && <p className="text-xs text-slate-500 dark:text-slate-400">{c.phone}</p>}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
 
-                    {customerQuery.trim() && !isSearchingCustomer && customerResults.length === 0 && (
-                      <p className="text-xs text-slate-500 text-center py-1">Nenhum cliente encontrado.</p>
-                    )}
+                      {customerQuery.trim() && !isSearchingCustomer && customerResults.length === 0 && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 text-center py-1">Nenhum cliente encontrado.</p>
+                      )}
 
-                    <button
-                      type="button"
-                      onClick={() => setShowNewCustomerForm(true)}
-                      className="w-full flex items-center justify-center gap-1.5 text-xs text-amber-700 hover:text-amber-900 font-medium py-1"
-                    >
-                      <UserPlus className="h-3.5 w-3.5" />
-                      Cadastrar novo cliente
-                    </button>
-                  </div>
-                )}
+                      <button
+                        type="button"
+                        onClick={() => setShowNewCustomerForm(true)}
+                        className="w-full flex items-center justify-center gap-1.5 text-xs text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-200 font-medium py-1"
+                      >
+                        <UserPlus className="h-3.5 w-3.5" />
+                        Cadastrar novo cliente
+                      </button>
+                    </div>
+                  )}
 
-                {triedSubmit && customerMissing && (
-                  <p className="text-red-500 text-xs">Selecione um cliente para continuar.</p>
-                )}
-              </div>
-            )}
-
-            <div className="space-y-1.5">
-              <Label htmlFor="notes" className="text-xs font-medium text-slate-700">
-                Observações
-              </Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Observações opcionais..."
-                rows={2}
-                className="border-slate-200 text-sm resize-none"
-              />
-            </div>
-
-            <div className="rounded-lg bg-slate-900 text-white p-4">
-              <div className="flex items-center justify-between text-xs text-slate-400">
-                <span>Subtotal ({itemCount} {itemCount === 1 ? 'item' : 'itens'})</span>
-                <span className="tabular-nums">{formatCurrency(total)}</span>
-              </div>
-              <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between">
-                <span className="text-sm text-slate-300 font-medium">Total</span>
-                <span className="text-3xl font-bold tracking-tight tabular-nums">
-                  {formatCurrency(total)}
-                </span>
-              </div>
-            </div>
-
-            <Button
-              className="hidden lg:flex w-full h-12 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold text-base shadow-sm shadow-green-900/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              onClick={handleSubmit}
-              disabled={!canSubmit}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Processando...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="mr-2 h-5 w-5" />
-                  Confirmar venda
-                </>
+                  {triedSubmit && customerMissing && (
+                    <p className="text-red-500 text-xs">Selecione um cliente para continuar.</p>
+                  )}
+                </div>
               )}
-            </Button>
 
-            {cartItems.length === 0 && (
-              <p className="text-xs text-slate-500 text-center">
-                Adicione produtos ao carrinho para finalizar.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="notes" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Observações
+                </Label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Observações opcionais..."
+                  rows={2}
+                  className="border-slate-200 dark:border-white/10 dark:bg-slate-800/60 dark:text-slate-200 dark:placeholder:text-slate-500 text-sm resize-none"
+                />
+              </div>
+
+              <div className="rounded-lg bg-slate-900 dark:bg-slate-950/80 dark:border dark:border-white/8 text-white p-4">
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span>Subtotal ({itemCount} {itemCount === 1 ? 'item' : 'itens'})</span>
+                  <span className="tabular-nums">{formatCurrency(total)}</span>
+                </div>
+                <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between">
+                  <span className="text-sm text-slate-300 font-medium">Total</span>
+                  <span className="text-3xl font-bold tracking-tight tabular-nums">
+                    {formatCurrency(total)}
+                  </span>
+                </div>
+              </div>
+
+              <Button
+                className="hidden lg:flex w-full h-12 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold text-base shadow-sm shadow-green-900/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                onClick={handleSubmit}
+                disabled={!canSubmit}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="mr-2 h-5 w-5" />
+                    Confirmar venda
+                  </>
+                )}
+              </Button>
+
+              {cartItems.length === 0 && (
+                <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
+                  Adicione produtos ao carrinho para finalizar.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      {/* Barra fixa de checkout (mobile only).
-          O painel "Finalizar venda" do lado direito vira sticky no desktop
-          (lg:sticky), mas no mobile fica longe — operador precisa scrollar
-          muito pra confirmar. Esta barra mostra Total + Confirmar sempre
-          visível embaixo. Reusa o mesmo handleSubmit, então toda a
-          validação (carrinho vazio, método faltando, cash short) continua
-          valendo e os toasts/erros aparecem normalmente. */}
+      {/* Barra fixa de checkout (mobile only) */}
       {cartItems.length > 0 && (
-        <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 px-4 py-3 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.08)]">
+        <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-slate-200 dark:border-white/10 bg-white/95 dark:bg-slate-900/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-slate-900/80 px-4 py-3 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.08)]">
           <div className="flex items-center gap-3">
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] text-slate-500 leading-tight">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
                 {itemCount} {itemCount === 1 ? 'item' : 'itens'}
               </p>
-              <p className="text-lg font-bold tabular-nums text-slate-900 leading-tight">
+              <p className="text-lg font-bold tabular-nums text-slate-900 dark:text-slate-100 leading-tight">
                 {formatCurrency(total)}
               </p>
             </div>

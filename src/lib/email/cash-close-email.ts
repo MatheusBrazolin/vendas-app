@@ -1,3 +1,4 @@
+import 'server-only'
 import type { CashCloseSummary } from '@/lib/queries/cash-close'
 import { formatCurrency, PAYMENT_LABELS } from '@/lib/utils/format'
 import { formatBRDateTime } from '@/lib/utils/datetime'

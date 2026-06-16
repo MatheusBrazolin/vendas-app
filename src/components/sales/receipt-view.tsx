@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { ArrowLeft, Printer, MessageCircle, Copy } from 'lucide-react'
@@ -73,7 +73,7 @@ export function ReceiptView({ sale, storeName = 'VendasApp' }: ReceiptViewProps)
           </Link>
         </Button>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700 text-white">
+          <Button onClick={handlePrint} className="bg-primary hover:bg-primary/90 text-white">
             <Printer className="h-4 w-4 mr-1.5" />
             Imprimir
           </Button>

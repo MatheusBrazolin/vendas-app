@@ -1,4 +1,4 @@
-import { LogOut } from 'lucide-react'
+﻿import { LogOut } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth/roles'
 import { signOut } from '@/app/(auth)/login/actions'
 import { Button } from '@/components/ui/button'
@@ -14,7 +14,7 @@ export async function Header() {
   if (!user) return null
 
   return (
-    <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-4 sm:px-6 lg:px-8 sticky top-0 z-20 gap-2">
+    <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex items-center justify-between px-4 sm:px-6 lg:px-8 sticky top-0 z-20 gap-2">
       <div className="flex items-center gap-2 min-w-0">
         <MobileSidebar role={user.role} />
         <Breadcrumb />
@@ -24,17 +24,17 @@ export async function Header() {
         <PendingSalesBadge />
         <InstallButton />
 
-        <div className="hidden sm:flex items-center gap-3 pr-3 border-r border-slate-200">
+        <div className="hidden sm:flex items-center gap-3 pr-3 border-r border-slate-200 dark:border-slate-700">
           <div className="text-right leading-tight">
-            <p className="text-sm font-medium text-slate-900 truncate max-w-[180px]">
+            <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate max-w-[180px]">
               {user.displayName}
             </p>
-            <p className="text-xs text-slate-500 truncate max-w-[180px]">
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[180px]">
               {user.email}
             </p>
           </div>
           <div
-            className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-semibold shadow-sm ring-2 ring-white"
+            className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white text-xs font-semibold shadow-sm ring-2 ring-white"
             aria-label={`Avatar de ${user.displayName}`}
           >
             {user.initials}
@@ -43,7 +43,7 @@ export async function Header() {
 
         {/* Mobile-only compact avatar */}
         <div
-          className="sm:hidden h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-semibold shadow-sm ring-2 ring-white shrink-0"
+          className="sm:hidden h-9 w-9 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white text-xs font-semibold shadow-sm ring-2 ring-white shrink-0"
           aria-label={`Avatar de ${user.displayName}`}
         >
           {user.initials}
@@ -54,7 +54,7 @@ export async function Header() {
             variant="ghost"
             size="sm"
             type="submit"
-            className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/8"
           >
             <LogOut className="h-4 w-4 sm:mr-1.5" />
             <span className="hidden sm:inline">Sair</span>

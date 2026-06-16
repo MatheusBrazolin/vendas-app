@@ -39,17 +39,17 @@ export function SalesChart({ data }: SalesChartProps) {
   const total = data.reduce((sum, point) => sum + point.total, 0)
 
   return (
-    <Card className="border-slate-200/80 shadow-sm">
+    <Card className="border-slate-200/60 dark:border-white/8 bg-white/80 dark:bg-slate-800/70 backdrop-blur-sm shadow-sm">
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div>
-          <CardTitle className="text-base text-slate-900">Vendas — Últimos 30 dias</CardTitle>
-          <p className="text-xs text-slate-500 mt-1">Evolução diária do faturamento</p>
+          <CardTitle className="text-base text-slate-900 dark:text-slate-100">Vendas — Últimos 30 dias</CardTitle>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Evolução diária do faturamento</p>
         </div>
         <div className="text-right">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
             Acumulado
           </p>
-          <p className="text-lg font-semibold text-slate-900 tabular-nums">
+          <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
             {formatCurrency(total)}
           </p>
         </div>
@@ -59,8 +59,8 @@ export function SalesChart({ data }: SalesChartProps) {
           <AreaChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#2563eb" stopOpacity={0.35} />
-                <stop offset="100%" stopColor="#2563eb" stopOpacity={0} />
+                <stop offset="0%" stopColor="#7c3aed" stopOpacity={0.35} />
+                <stop offset="100%" stopColor="#7c3aed" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
@@ -86,14 +86,14 @@ export function SalesChart({ data }: SalesChartProps) {
             <Area
               type="monotone"
               dataKey="total"
-              stroke="#2563eb"
+              stroke="#7c3aed"
               strokeWidth={2}
               fill="url(#salesGradient)"
               activeDot={{
                 r: 5,
                 stroke: '#fff',
                 strokeWidth: 2,
-                fill: '#2563eb',
+                fill: '#7c3aed',
               }}
             />
           </AreaChart>

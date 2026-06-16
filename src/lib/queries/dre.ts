@@ -1,3 +1,4 @@
+import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { startOfMonth, endOfMonth, subDays, subMonths } from 'date-fns'
 

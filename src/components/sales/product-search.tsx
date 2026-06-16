@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useRef, type KeyboardEvent } from 'react'
 import { toast } from 'sonner'
@@ -220,7 +220,7 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
 
       {/* ── Staged product: quantity confirmation ── */}
       {staged && (
-        <div className="rounded-lg border-2 border-blue-400 bg-blue-50 p-3 space-y-3 shadow-sm">
+        <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-3 space-y-3 shadow-sm">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-slate-900 truncate">{staged.product.name}</p>
@@ -261,7 +261,7 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
                 onChange={(e) => setStagedQty(parseInt(e.target.value, 10) || 1)}
                 onFocus={(e) => e.currentTarget.select()}
                 onKeyDown={handleStagedQtyKeyDown}
-                className="w-14 h-9 text-center text-base font-bold tabular-nums bg-white border-x border-slate-200 focus:outline-none focus:bg-blue-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-14 h-9 text-center text-base font-bold tabular-nums bg-white border-x border-slate-200 focus:outline-none focus:bg-primary/10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 aria-label="Quantidade"
               />
               <button
@@ -285,7 +285,7 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
             </Button>
           </div>
 
-          <p className="text-[11px] text-blue-600 font-medium">
+          <p className="text-[11px] text-primary font-medium">
             Digite a quantidade e pressione <strong>Enter</strong> · <strong>Esc</strong> para cancelar
           </p>
         </div>
@@ -328,14 +328,14 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
               aria-selected={index === highlightedIndex}
               className={`w-full text-left flex items-center justify-between gap-3 px-4 py-2.5 transition-colors focus:outline-none ${
                 index === highlightedIndex
-                  ? 'bg-blue-50 border-l-2 border-l-blue-500'
+                  ? 'bg-primary/5 border-l-2 border-l-blue-500'
                   : 'hover:bg-slate-50'
               }`}
               onClick={() => stageProduct(product)}
               onMouseEnter={() => setHighlightedIndex(index)}
             >
               <div className="min-w-0 flex-1">
-                <p className={`text-sm font-medium truncate ${index === highlightedIndex ? 'text-blue-700' : ''}`}>
+                <p className={`text-sm font-medium truncate ${index === highlightedIndex ? 'text-primary/80' : ''}`}>
                   {product.name}
                 </p>
                 <p className="text-xs text-slate-500">
@@ -345,7 +345,7 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
               </div>
               <span className="shrink-0 text-[11px] text-slate-400 hidden sm:block">
                 {index === highlightedIndex
-                  ? <span className="text-blue-500 font-medium">↵ Enter</span>
+                  ? <span className="text-primary/80 font-medium">↵ Enter</span>
                   : 'clique ou ↓'}
               </span>
             </button>

@@ -13,6 +13,7 @@
  * and conflict handling for offline mutations.
  */
 
+import 'client-only'
 import { createClient } from '@/lib/supabase/client'
 import { getDB, type CachedCategory, type CachedProduct, type SyncMeta } from './db'
 

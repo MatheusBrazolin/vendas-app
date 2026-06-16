@@ -22,23 +22,23 @@ type PaymentStyle = { badge: string; dot: string }
 
 const PAYMENT_STYLES: Record<PaymentMethod, PaymentStyle> = {
   cash: {
-    badge: 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/15',
+    badge: 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 ring-1 ring-inset ring-green-600/15 dark:ring-green-500/20',
     dot: 'bg-green-500',
   },
   pix: {
-    badge: 'bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-600/15',
+    badge: 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 ring-1 ring-inset ring-purple-600/15 dark:ring-purple-500/20',
     dot: 'bg-purple-500',
   },
   credit: {
-    badge: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/15',
-    dot: 'bg-blue-500',
+    badge: 'bg-primary/5 dark:bg-primary/10 text-primary/80 dark:text-primary/90 ring-1 ring-inset ring-primary/20',
+    dot: 'bg-primary/90',
   },
   debit: {
-    badge: 'bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-600/15',
+    badge: 'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 ring-1 ring-inset ring-orange-600/15 dark:ring-orange-500/20',
     dot: 'bg-orange-500',
   },
   fiado: {
-    badge: 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/15',
+    badge: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-1 ring-inset ring-amber-600/15 dark:ring-amber-500/20',
     dot: 'bg-amber-500',
   },
 }
@@ -110,20 +110,19 @@ export default async function VendasPage({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
             {isEmployee ? 'Vendas de hoje' : 'Vendas'}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             {total} {total === 1 ? 'venda registrada' : 'vendas registradas'}
             {isEmployee ? ' hoje' : hasFilters ? ' (com filtros aplicados)' : ''}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {/* Fechar caixa: funcionário usa todo final de dia, não é admin-only. */}
           <Button
             asChild
             variant="outline"
-            className="border-slate-200 text-slate-700 hover:bg-slate-50"
+            className="border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5"
           >
             <Link href="/vendas/fechamento">
               <Wallet className="mr-1.5 h-4 w-4" />
@@ -139,7 +138,7 @@ export default async function VendasPage({
         </div>
       </div>
 
-      <Card className="border-slate-200/80 shadow-sm">
+      <Card className="border-slate-200/80 dark:border-white/8 shadow-sm dark:bg-slate-800/60">
         <SalesFilters
           payment={payment ?? ''}
           day={day ?? ''}
@@ -150,22 +149,20 @@ export default async function VendasPage({
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="hover:bg-transparent border-slate-100">
-                <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 h-11">
+              <TableRow className="hover:bg-transparent border-slate-100 dark:border-white/5">
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 h-11">
                   Data
                 </TableHead>
-                <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 text-right">
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 text-right">
                   Total
                 </TableHead>
-                {/* Pagamento e Observações somem em telas estreitas pra
-                    deixar Data / Total / Ações respiráveis no iPhone. */}
-                <TableHead className="hidden sm:table-cell text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <TableHead className="hidden sm:table-cell text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   Pagamento
                 </TableHead>
-                <TableHead className="hidden md:table-cell text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <TableHead className="hidden md:table-cell text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   Observações
                 </TableHead>
-                <TableHead className="w-24 sm:w-32 text-right pr-3 sm:pr-6 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <TableHead className="w-24 sm:w-32 text-right pr-3 sm:pr-6 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   Ações
                 </TableHead>
               </TableRow>
@@ -174,14 +171,14 @@ export default async function VendasPage({
               {sales.length === 0 ? (
                 <TableRow className="hover:bg-transparent">
                   <TableCell colSpan={5} className="text-center py-16">
-                    <div className="flex flex-col items-center gap-2 text-slate-400">
-                      <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center">
-                        <ShoppingCart className="h-6 w-6 text-slate-400" />
+                    <div className="flex flex-col items-center gap-2 text-slate-400 dark:text-slate-500">
+                      <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center">
+                        <ShoppingCart className="h-6 w-6 text-slate-400 dark:text-slate-500" />
                       </div>
-                      <p className="text-sm font-medium text-slate-600 mt-1">
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mt-1">
                         {hasFilters ? 'Nenhuma venda encontrada' : 'Nenhuma venda registrada'}
                       </p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-slate-400 dark:text-slate-500">
                         {hasFilters
                           ? 'Tente ajustar os filtros.'
                           : 'Registre sua primeira venda clicando em Nova Venda.'}
@@ -201,26 +198,24 @@ export default async function VendasPage({
                 sales.map((sale, idx) => (
                   <TableRow
                     key={sale.id}
-                    className={`border-slate-100 hover:bg-slate-50/70 transition-colors ${
-                      idx % 2 === 1 ? 'bg-slate-50/30' : ''
+                    className={`border-slate-100 dark:border-white/5 hover:bg-slate-50/70 dark:hover:bg-white/5 transition-colors ${
+                      idx % 2 === 1 ? 'bg-slate-50/30 dark:bg-white/2' : ''
                     }`}
                   >
-                    <TableCell className="text-sm text-slate-600 tabular-nums">
+                    <TableCell className="text-sm text-slate-600 dark:text-slate-400 tabular-nums">
                       <div>{formatDate(sale.created_at)}</div>
-                      {/* Em mobile (onde Pagamento some), mostramos o badge
-                          aqui embaixo da data pra não perder a informação. */}
                       <div className="sm:hidden mt-1">
                         <PaymentBadge method={sale.payment_method as PaymentMethod} />
                       </div>
                     </TableCell>
-                    <TableCell className="text-right font-semibold text-slate-900 tabular-nums">
+                    <TableCell className="text-right font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
                       {formatCurrency(sale.total_amount)}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <PaymentBadge method={sale.payment_method as PaymentMethod} />
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-sm text-slate-500 truncate max-w-xs">
-                      {sale.notes || <span className="text-slate-300">—</span>}
+                    <TableCell className="hidden md:table-cell text-sm text-slate-500 dark:text-slate-400 truncate max-w-xs">
+                      {sale.notes || <span className="text-slate-300 dark:text-slate-600">—</span>}
                     </TableCell>
                     <TableCell className="text-right pr-3 sm:pr-6">
                       <div className="inline-flex items-center gap-1">
@@ -228,7 +223,7 @@ export default async function VendasPage({
                           variant="ghost"
                           size="sm"
                           asChild
-                          className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                          className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/8"
                           title="Ver detalhes"
                         >
                           <Link href={`/vendas/${sale.id}`}>Ver</Link>
@@ -237,7 +232,7 @@ export default async function VendasPage({
                           variant="ghost"
                           size="sm"
                           asChild
-                          className="text-slate-600 hover:text-blue-700 hover:bg-blue-50"
+                          className="text-slate-600 dark:text-slate-400 hover:text-primary/80 hover:bg-primary/5"
                           title="Imprimir recibo"
                         >
                           <Link href={`/vendas/${sale.id}/recibo`}>

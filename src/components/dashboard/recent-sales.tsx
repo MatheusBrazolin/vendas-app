@@ -1,4 +1,4 @@
-import Link from 'next/link'
+﻿import Link from 'next/link'
 import { ArrowRight, ShoppingCart } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,7 @@ interface RecentSalesProps {
 const PAYMENT_BADGE: Record<PaymentMethod, { badge: string; dot: string }> = {
   cash: { badge: 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/15', dot: 'bg-green-500' },
   pix: { badge: 'bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-600/15', dot: 'bg-purple-500' },
-  credit: { badge: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/15', dot: 'bg-blue-500' },
+  credit: { badge: 'bg-primary/5 text-primary/80 ring-1 ring-inset ring-primary/20', dot: 'bg-primary/90' },
   debit: { badge: 'bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-600/15', dot: 'bg-orange-500' },
   fiado: { badge: 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/15', dot: 'bg-amber-500' },
 }

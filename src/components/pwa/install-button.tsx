@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useRef, useState } from 'react'
 import { Download, Share, Plus, X } from 'lucide-react'
@@ -118,7 +118,7 @@ export function InstallButton() {
         variant="outline"
         size="sm"
         onClick={handleInstall}
-        className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+        className="border-primary/20 text-primary/80 hover:bg-primary/5 hover:text-blue-800"
       >
         <Download className="h-4 w-4 sm:mr-1.5" />
         <span className="hidden sm:inline">Instalar app</span>
@@ -134,7 +134,7 @@ export function InstallButton() {
           variant="outline"
           size="sm"
           onClick={() => setShowIosHelp((v) => !v)}
-          className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+          className="border-primary/20 text-primary/80 hover:bg-primary/5 hover:text-blue-800"
         >
           <Download className="h-4 w-4 sm:mr-1.5" />
           <span className="hidden sm:inline">Instalar app</span>
@@ -158,12 +158,12 @@ export function InstallButton() {
             <ol className="space-y-2 text-slate-600">
               <li className="flex items-center gap-2">
                 <span className="font-medium text-slate-900">1.</span>
-                Toque em <Share className="h-4 w-4 inline text-blue-600" aria-label="Compartilhar" />
+                Toque em <Share className="h-4 w-4 inline text-primary" aria-label="Compartilhar" />
                 <span>(Compartilhar)</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className="font-medium text-slate-900">2.</span>
-                Escolha <Plus className="h-4 w-4 inline text-blue-600" aria-hidden />
+                Escolha <Plus className="h-4 w-4 inline text-primary" aria-hidden />
                 <span>&ldquo;Adicionar à Tela de Início&rdquo;</span>
               </li>
               <li className="flex items-start gap-2">

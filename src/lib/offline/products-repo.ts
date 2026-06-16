@@ -11,6 +11,7 @@
  * components.
  */
 
+import 'client-only'
 import { getDB } from './db'
 import { syncProducts } from './sync'
 import type { Product } from '@/types/database'

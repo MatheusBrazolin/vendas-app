@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useRef } from 'react'
 import { Minus, Plus, Trash2, ShoppingCart, Pencil, Check } from 'lucide-react'
@@ -83,7 +83,7 @@ export function Cart({ items, onUpdateQty, onUpdatePrice, onRemove }: CartProps)
                         if (e.key === 'Enter') commitEdit(item.product.id)
                         if (e.key === 'Escape') setEditingId(null)
                       }}
-                      className="h-6 w-24 text-xs px-1.5 py-0 border-blue-400 focus-visible:ring-1 focus-visible:ring-blue-400"
+                      className="h-6 w-24 text-xs px-1.5 py-0 border-primary/60 focus-visible:ring-1 focus-visible:ring-blue-400"
                     />
                     <button
                       type="button"
@@ -91,7 +91,7 @@ export function Cart({ items, onUpdateQty, onUpdatePrice, onRemove }: CartProps)
                         e.preventDefault()
                         commitEdit(item.product.id)
                       }}
-                      className="text-blue-600 hover:text-blue-700"
+                      className="text-primary hover:text-primary/80"
                       aria-label="Confirmar preço"
                     >
                       <Check className="h-3.5 w-3.5" />
@@ -112,7 +112,7 @@ export function Cart({ items, onUpdateQty, onUpdatePrice, onRemove }: CartProps)
                     <button
                       type="button"
                       onClick={() => startEdit(item)}
-                      className="text-slate-300 hover:text-blue-500 transition-colors"
+                      className="text-slate-300 hover:text-primary/80 transition-colors"
                       aria-label={`Editar preço de ${item.product.name}`}
                     >
                       <Pencil className="h-3 w-3" />

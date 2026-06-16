@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -75,7 +75,7 @@ export function ResetPasswordForm({ code }: ResetPasswordFormProps) {
     <div className="w-full max-w-sm">
       {/* Mobile brand */}
       <div className="flex lg:hidden items-center gap-2 mb-10">
-        <div className="h-9 w-9 rounded-lg bg-blue-600 flex items-center justify-center">
+        <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
           <ShoppingCart className="h-4 w-4 text-white" />
         </div>
         <span className="font-semibold text-slate-900">VendasApp</span>
@@ -83,7 +83,7 @@ export function ResetPasswordForm({ code }: ResetPasswordFormProps) {
 
       {status === 'loading' && (
         <div className="flex flex-col items-center gap-3 text-slate-500">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-sm">Verificando link...</p>
         </div>
       )}
@@ -101,7 +101,7 @@ export function ResetPasswordForm({ code }: ResetPasswordFormProps) {
           </div>
           <Link
             href="/esqueceu-senha"
-            className="inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
+            className="inline-block text-sm font-medium text-primary hover:text-primary/80"
           >
             Solicitar novo link
           </Link>
@@ -140,7 +140,7 @@ export function ResetPasswordForm({ code }: ResetPasswordFormProps) {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Mínimo 6 caracteres"
                   autoComplete="new-password"
-                  className="h-11 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600/20 focus-visible:border-blue-600 pr-10"
+                  className="h-11 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600/20 focus-visible:border-primary pr-10"
                   {...register('password')}
                 />
                 <button
@@ -171,7 +171,7 @@ export function ResetPasswordForm({ code }: ResetPasswordFormProps) {
                   type={showConfirm ? 'text' : 'password'}
                   placeholder="Repita a senha"
                   autoComplete="new-password"
-                  className="h-11 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600/20 focus-visible:border-blue-600 pr-10"
+                  className="h-11 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600/20 focus-visible:border-primary pr-10"
                   {...register('confirmPassword')}
                 />
                 <button
@@ -201,7 +201,7 @@ export function ResetPasswordForm({ code }: ResetPasswordFormProps) {
 
             <Button
               type="submit"
-              className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm transition-colors"
+              className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-medium shadow-sm transition-colors"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
