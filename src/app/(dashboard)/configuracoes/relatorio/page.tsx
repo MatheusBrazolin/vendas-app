@@ -76,32 +76,28 @@ export default async function RelatorioPage() {
       </Card>
 
       {/* Quick stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary/5 dark:bg-primary/10 text-primary flex items-center justify-center">
-            <Mail className="h-5 w-5" />
+      <div className="grid grid-cols-2 gap-3">
+        <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 p-3 flex flex-col items-center text-center gap-1.5">
+          <div className="h-8 w-8 rounded-lg bg-primary/5 dark:bg-primary/10 text-primary flex items-center justify-center">
+            <Mail className="h-4 w-4" />
           </div>
-          <div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              Cadastrados
-            </p>
-            <p className="text-xl font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
-              {recipients.length}
-            </p>
-          </div>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide leading-tight">
+            Cadastrados
+          </p>
+          <p className="text-xl font-semibold text-slate-900 dark:text-slate-100 tabular-nums leading-none">
+            {recipients.length}
+          </p>
         </Card>
-        <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <MailCheck className="h-5 w-5" />
+        <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 p-3 flex flex-col items-center text-center gap-1.5">
+          <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <MailCheck className="h-4 w-4" />
           </div>
-          <div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              Ativos
-            </p>
-            <p className="text-xl font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
-              {activeCount}
-            </p>
-          </div>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide leading-tight">
+            Ativos
+          </p>
+          <p className="text-xl font-semibold text-slate-900 dark:text-slate-100 tabular-nums leading-none">
+            {activeCount}
+          </p>
         </Card>
       </div>
 
@@ -129,7 +125,7 @@ export default async function RelatorioPage() {
                 <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   Status
                 </TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                <TableHead className="hidden sm:table-cell text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   Adicionado em
                 </TableHead>
                 <TableHead className="text-right pr-4 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -173,7 +169,7 @@ export default async function RelatorioPage() {
                         {r.active ? 'Ativo' : 'Inativo'}
                       </span>
                     </TableCell>
-                    <TableCell className="text-sm text-slate-500 dark:text-slate-400 tabular-nums">
+                    <TableCell className="hidden sm:table-cell text-sm text-slate-500 dark:text-slate-400 tabular-nums">
                       {formatDate(r.created_at)}
                     </TableCell>
                     <TableCell className="text-right pr-4">

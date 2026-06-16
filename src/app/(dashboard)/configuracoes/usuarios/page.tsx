@@ -66,45 +66,39 @@ export default async function UsuariosPage() {
       </div>
 
       {/* Quick stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary/5 dark:bg-primary/10 text-primary flex items-center justify-center">
-            <Users className="h-5 w-5" />
+      <div className="grid grid-cols-3 gap-3">
+        <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 p-3 flex flex-col items-center text-center gap-1.5">
+          <div className="h-8 w-8 rounded-lg bg-primary/5 dark:bg-primary/10 text-primary flex items-center justify-center">
+            <Users className="h-4 w-4" />
           </div>
-          <div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              Total
-            </p>
-            <p className="text-xl font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
-              {users.length}
-            </p>
-          </div>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide leading-tight">
+            Total
+          </p>
+          <p className="text-xl font-semibold text-slate-900 dark:text-slate-100 tabular-nums leading-none">
+            {users.length}
+          </p>
         </Card>
-        <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <ShieldCheck className="h-5 w-5" />
+        <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 p-3 flex flex-col items-center text-center gap-1.5">
+          <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <ShieldCheck className="h-4 w-4" />
           </div>
-          <div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              Administradores
-            </p>
-            <p className="text-xl font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
-              {adminCount}
-            </p>
-          </div>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide leading-tight">
+            Admins
+          </p>
+          <p className="text-xl font-semibold text-slate-900 dark:text-slate-100 tabular-nums leading-none">
+            {adminCount}
+          </p>
         </Card>
-        <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-white/8 text-slate-600 dark:text-slate-400 flex items-center justify-center">
-            <UserIcon className="h-5 w-5" />
+        <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 p-3 flex flex-col items-center text-center gap-1.5">
+          <div className="h-8 w-8 rounded-lg bg-slate-100 dark:bg-white/8 text-slate-600 dark:text-slate-400 flex items-center justify-center">
+            <UserIcon className="h-4 w-4" />
           </div>
-          <div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              Funcionários
-            </p>
-            <p className="text-xl font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
-              {users.length - adminCount}
-            </p>
-          </div>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide leading-tight">
+            Funcionários
+          </p>
+          <p className="text-xl font-semibold text-slate-900 dark:text-slate-100 tabular-nums leading-none">
+            {users.length - adminCount}
+          </p>
         </Card>
       </div>
 
@@ -122,13 +116,13 @@ export default async function UsuariosPage() {
                 <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 h-11">
                   Usuário
                 </TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                <TableHead className="hidden sm:table-cell text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   Cadastrado em
                 </TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                <TableHead className="hidden md:table-cell text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   Último acesso
                 </TableHead>
-                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 text-right">
+                <TableHead className="hidden sm:table-cell text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 text-right">
                   Papel
                 </TableHead>
                 <TableHead className="w-12 text-right pr-4 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -190,13 +184,13 @@ export default async function UsuariosPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-slate-500 dark:text-slate-400 tabular-nums">
+                      <TableCell className="hidden sm:table-cell text-sm text-slate-500 dark:text-slate-400 tabular-nums">
                         {formatDate(u.created_at)}
                       </TableCell>
-                      <TableCell className="text-sm text-slate-500 dark:text-slate-400 tabular-nums">
+                      <TableCell className="hidden md:table-cell text-sm text-slate-500 dark:text-slate-400 tabular-nums">
                         {formatDate(u.last_sign_in_at)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="hidden sm:table-cell text-right">
                         <UserRoleSelect
                           userId={u.user_id}
                           role={u.role}

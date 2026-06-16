@@ -29,6 +29,7 @@ interface NavItem {
   label: string
   icon: LucideIcon
   adminOnly?: boolean
+  desktopOnly?: boolean
 }
 
 interface NavSection {
@@ -59,7 +60,7 @@ const navSections: NavSection[] = [
       { href: '/configuracoes/usuarios', label: 'Usuários', icon: Users, adminOnly: true },
       { href: '/relatorios', label: 'Relatório de lucro', icon: BarChart3, adminOnly: true },
       { href: '/configuracoes/relatorio', label: 'Relatório por email', icon: Mail, adminOnly: true },
-      { href: '/configuracoes/baixar', label: 'Baixar app', icon: MonitorDown, adminOnly: true },
+      { href: '/configuracoes/baixar', label: 'Baixar app', icon: MonitorDown, adminOnly: true, desktopOnly: true },
     ],
   },
 ]
@@ -132,15 +133,20 @@ const itemVariants = {
 interface NavListProps {
   role: UserRole
   onNavigate?: () => void
+  isMobile?: boolean
 }
 
-function NavList({ role, onNavigate }: NavListProps) {
+function NavList({ role, onNavigate, isMobile }: NavListProps) {
   const pathname = usePathname()
 
   const visibleSections = navSections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => !item.adminOnly || role === 'admin'),
+      items: section.items.filter(
+        (item) =>
+          (!item.adminOnly || role === 'admin') &&
+          (!item.desktopOnly || !isMobile)
+      ),
     }))
     .filter((section) => section.items.length > 0)
 
@@ -292,7 +298,7 @@ export function MobileSidebar({ role }: SidebarProps) {
       >
         <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
         <SidebarBrand />
-        <NavList role={role} onNavigate={() => setOpen(false)} />
+        <NavList role={role} onNavigate={() => setOpen(false)} isMobile />
         <SidebarFooter role={role} />
       </SheetContent>
     </Sheet>
