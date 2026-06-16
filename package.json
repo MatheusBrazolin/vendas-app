@@ -1,8 +1,8 @@
 {
-  "name": "vendas-app",
+  "name": "nexsales",
   "version": "0.1.0",
   "private": true,
-  "description": "Sistema de gestão de vendas e estoque — PDV, controle de produtos e fechamento de caixa.",
+  "description": "NexSales — Smart Sales Management Platform. PDV, gestão de produtos, clientes e relatórios.",
   "author": "OTM Tech",
   "main": "electron/main.cjs",
   "scripts": {
@@ -27,10 +27,12 @@
     "@supabase/supabase-js": "^2.106.1",
     "@vercel/speed-insights": "^2.0.0",
     "class-variance-authority": "^0.7.1",
+    "client-only": "^0.0.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.2.1",
     "dexie": "^4.4.3",
+    "framer-motion": "^12.40.0",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",
     "nodemailer": "^8.0.10",
@@ -38,6 +40,7 @@
     "react-dom": "19.2.4",
     "react-hook-form": "^7.76.0",
     "recharts": "^3.8.1",
+    "server-only": "^0.0.1",
     "shadcn": "^4.8.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
@@ -65,12 +68,12 @@
     "vitest": "^2.1.9"
   },
   "build": {
-    "appId": "br.com.otmtech.vendasapp",
-    "productName": "VendasApp",
+    "appId": "br.com.otmtech.nexsales",
+    "productName": "NexSales",
     "directories": {
       "output": "instalador"
     },
-    "artifactName": "VendasApp-Instalador.${ext}",
+    "artifactName": "NexSales-Instalador.${ext}",
     "files": [
       "electron/**/*"
     ],
@@ -85,7 +88,7 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "VendasApp"
+      "shortcutName": "NexSales"
     }
   }
 }
