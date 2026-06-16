@@ -288,7 +288,7 @@ export function PDV() {
       items: cartItems.map((item) => ({
         name: item.product.name,
         quantity: item.quantity,
-        unit_price: item.product.sale_price,
+        unit_price: item.customPrice ?? item.product.sale_price,
       })),
     }
 

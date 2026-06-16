@@ -70,11 +70,16 @@ function LoginPageContent() {
     if (!selected || !profilePwd || isSubmitting) return
     setIsSubmitting(true)
     setServerError(null)
-    saveProfile(selected)
-    const result = await signIn(selected, profilePwd)
-    if (result?.error) {
+    try {
+      saveProfile(selected)
+      const result = await signIn(selected, profilePwd)
+      if (result?.error) {
+        removeProfile(selected)
+        setServerError(result.error)
+      }
+    } catch {
       removeProfile(selected)
-      setServerError(result.error)
+    } finally {
       setIsSubmitting(false)
     }
   }
@@ -87,11 +92,15 @@ function LoginPageContent() {
 
   async function onSubmit(data: LoginFormData) {
     setServerError(null)
-    saveProfile(data.username)
-    const result = await signIn(data.username, data.password)
-    if (result?.error) {
+    try {
+      saveProfile(data.username)
+      const result = await signIn(data.username, data.password)
+      if (result?.error) {
+        removeProfile(data.username)
+        setServerError(result.error)
+      }
+    } catch {
       removeProfile(data.username)
-      setServerError(result.error)
     }
   }
 

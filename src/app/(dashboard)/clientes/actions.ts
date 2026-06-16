@@ -69,7 +69,7 @@ export async function recordDebtPayment(
 ): Promise<RecordDebtPaymentResult> {
   const supabase = await createClient()
 
-  const { error } = await supabase.rpc('record_debt_payment', {
+  const { data: paymentId, error } = await supabase.rpc('record_debt_payment', {
     p_customer_id: input.customerId,
     p_amount: input.amount,
     p_notes: input.notes?.trim() || null,
@@ -77,16 +77,7 @@ export async function recordDebtPayment(
 
   if (error) return { success: false, error: error.message }
 
-  // Fetch the ID of the payment just inserted (most recent for this customer)
-  const { data: paymentRow } = await supabase
-    .from('debt_payments')
-    .select('id')
-    .eq('customer_id', input.customerId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single()
-
   revalidatePath('/clientes')
   revalidatePath(`/clientes/${input.customerId}`)
-  return { success: true, paymentId: paymentRow?.id }
+  return { success: true, paymentId: paymentId as string }
 }
