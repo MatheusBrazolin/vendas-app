@@ -37,7 +37,7 @@ export function SyncProvider() {
 
       try {
         const result = await syncAll()
-        if ('error' in result.products || 'error' in result.categories) {
+        if ('error' in result.products || 'error' in result.categories || 'error' in result.customers) {
           console.warn('[sync] partial failure', result)
         }
       } catch (err) {

@@ -16,6 +16,8 @@ import { ProductActions } from '@/components/products/product-actions'
 import { getCategories, getProductsPaged, type StockFilter } from '@/lib/queries/products'
 import { formatCurrency } from '@/lib/utils/format'
 import { requireAdmin } from '@/lib/auth/roles'
+import { tryQuery } from '@/lib/supabase/try-query'
+import { OfflineBanner } from '@/components/offline/offline-banner'
 
 type StockStatus = 'out' | 'low' | 'ok'
 
@@ -85,10 +87,12 @@ export default async function ProdutosPage({
   const stock = parseStockFilter(sp.stock)
   const page = sp.page ? Math.max(1, parseInt(sp.page, 10) || 1) : 1
 
-  const [{ items: products, total, totalPages, pageSize }, categories] = await Promise.all([
-    getProductsPaged({ search, categoryId, stock, page }),
-    getCategories(),
+  const EMPTY_PRODUCTS = { items: [], total: 0, page: 1, pageSize: 20, totalPages: 0 }
+  const [{ data: productsResult, offline }, { data: categories }] = await Promise.all([
+    tryQuery(() => getProductsPaged({ search, categoryId, stock, page }), EMPTY_PRODUCTS),
+    tryQuery(() => getCategories(), []),
   ])
+  const { items: products, total, totalPages, pageSize } = productsResult
 
   const paginationParams: Record<string, string | undefined> = {
     q: search,
@@ -98,6 +102,9 @@ export default async function ProdutosPage({
 
   return (
     <div className="space-y-6">
+      {offline && (
+        <OfflineBanner message="Sem conexão — lista de produtos indisponível. Use o PDV para consultar produtos pelo catálogo offline." />
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Produtos</h1>

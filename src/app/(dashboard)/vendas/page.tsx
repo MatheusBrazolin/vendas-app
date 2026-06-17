@@ -14,6 +14,8 @@ import { Pagination } from '@/components/ui/pagination'
 import { SalesFilters } from '@/components/sales/sales-filters'
 import { getSalesPaged } from '@/lib/queries/sales'
 import { getCurrentUser } from '@/lib/auth/roles'
+import { tryQuery } from '@/lib/supabase/try-query'
+import { OfflineBanner } from '@/components/offline/offline-banner'
 import { todayBRISO } from '@/lib/utils/datetime'
 import { formatCurrency, formatDate, PAYMENT_LABELS } from '@/lib/utils/format'
 import type { PaymentMethod } from '@/types/database'
@@ -92,11 +94,12 @@ export default async function VendasPage({
       ? sp.day
       : undefined
 
-  const { items: sales, total, totalPages, pageSize } = await getSalesPaged({
-    payment,
-    day,
-    page,
-  })
+  const EMPTY_SALES = { items: [], total: 0, page: 1, pageSize: 20, totalPages: 0 }
+  const { data: salesResult, offline } = await tryQuery(
+    () => getSalesPaged({ payment, day, page }),
+    EMPTY_SALES,
+  )
+  const { items: sales, total, totalPages, pageSize } = salesResult
 
   // Para o funcionário, "hoje" é o estado normal, não um filtro que ele aplicou.
   const hasFilters = Boolean(payment || (!isEmployee && day))
@@ -108,6 +111,9 @@ export default async function VendasPage({
 
   return (
     <div className="space-y-6">
+      {offline && (
+        <OfflineBanner message="Sem conexão — histórico de vendas indisponível offline." />
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">

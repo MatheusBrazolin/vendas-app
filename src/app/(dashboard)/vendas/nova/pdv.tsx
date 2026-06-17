@@ -34,6 +34,7 @@ import { ProductSearch } from '@/components/sales/product-search'
 import { Cart } from '@/components/sales/cart'
 import { createSale } from '../actions'
 import { searchCustomers, createCustomer } from '../../clientes/actions'
+import { searchCustomersOffline } from '@/lib/offline/customers-repo'
 import { queueSale } from '@/lib/offline/sales-repo'
 import { formatCurrency } from '@/lib/utils/format'
 import { printReceipt } from '@/lib/utils/print-receipt'
@@ -135,8 +136,13 @@ export function PDV() {
     if (searchDebounce.current) clearTimeout(searchDebounce.current)
     searchDebounce.current = setTimeout(async () => {
       setIsSearchingCustomer(true)
-      const result = await searchCustomers(customerQuery)
-      setCustomerResults(result.customers ?? [])
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        const rows = await searchCustomersOffline(customerQuery)
+        setCustomerResults(rows)
+      } else {
+        const result = await searchCustomers(customerQuery)
+        setCustomerResults(result.customers ?? [])
+      }
       setIsSearchingCustomer(false)
     }, 350)
     return () => {

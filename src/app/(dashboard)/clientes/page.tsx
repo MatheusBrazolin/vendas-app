@@ -4,6 +4,8 @@ import { differenceInCalendarDays } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { getCustomersWithDebt } from '@/lib/queries/customers'
 import { formatCurrency } from '@/lib/utils/format'
+import { tryQuery } from '@/lib/supabase/try-query'
+import { OfflineBanner } from '@/components/offline/offline-banner'
 import type { CustomerBalance } from '@/types/database'
 
 function daysSince(dateStr: string | null): number | null {
@@ -50,10 +52,13 @@ function DebtBadge({ customer }: { customer: CustomerBalance }) {
 }
 
 export default async function ClientesPage() {
-  const customers = await getCustomersWithDebt()
+  const { data: customers, offline } = await tryQuery(() => getCustomersWithDebt(), [] as CustomerBalance[])
 
   return (
     <div className="space-y-6">
+      {offline && (
+        <OfflineBanner message="Sem conexão — lista de clientes indisponível offline." />
+      )}
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Clientes / Fiado</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">

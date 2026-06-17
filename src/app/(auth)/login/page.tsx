@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2, AlertCircle, Eye, EyeOff, ArrowLeft, Plus, ShoppingBag } from 'lucide-react'
+import { Loader2, AlertCircle, Eye, EyeOff, ArrowLeft, Plus, ShoppingBag, WifiOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -30,6 +30,7 @@ function LoginPageContent() {
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
+  const [isOfflineError, setIsOfflineError] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const passwordRef = useRef<HTMLInputElement>(null)
@@ -61,6 +62,7 @@ function LoginPageContent() {
     setSelected(username)
     setProfilePwd('')
     setServerError(null)
+    setIsOfflineError(false)
     setShowPassword(false)
     setMode('profile-password')
   }
@@ -74,7 +76,8 @@ function LoginPageContent() {
       saveProfile(selected)
       const result = await signIn(selected, profilePwd)
       if (result?.error) {
-        removeProfile(selected)
+        if (!result.offline) removeProfile(selected)
+        setIsOfflineError(result.offline ?? false)
         setServerError(result.error)
       }
     } catch (err: unknown) {
@@ -100,7 +103,8 @@ function LoginPageContent() {
       saveProfile(data.username)
       const result = await signIn(data.username, data.password)
       if (result?.error) {
-        removeProfile(data.username)
+        if (!result.offline) removeProfile(data.username)
+        setIsOfflineError(result.offline ?? false)
         setServerError(result.error)
       }
     } catch (err: unknown) {
@@ -217,8 +221,10 @@ function LoginPageContent() {
           </div>
 
           {serverError && (
-            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
-              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+            <div className={`flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm ${isOfflineError ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-red-200 bg-red-50 text-red-700'}`}>
+              {isOfflineError
+                ? <WifiOff className="h-4 w-4 mt-0.5 shrink-0" />
+                : <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />}
               <span>{serverError}</span>
             </div>
           )}

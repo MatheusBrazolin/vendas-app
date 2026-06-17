@@ -15,7 +15,7 @@
 
 import 'client-only'
 import { createClient } from '@/lib/supabase/client'
-import { getDB, type CachedCategory, type CachedProduct, type SyncMeta } from './db'
+import { getDB, type CachedCategory, type CachedCustomer, type CachedProduct, type SyncMeta } from './db'
 
 export interface SyncResult {
   /** How many rows were written to the local cache. */
@@ -68,6 +68,28 @@ export async function syncCategories(): Promise<SyncResult> {
   return { synced: rows.length, at }
 }
 
+/** Full refresh of `customer_balances`. Syncs all customers for offline fiado search. */
+export async function syncCustomers(): Promise<SyncResult> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('customer_balances')
+    .select('*')
+    .order('full_name')
+
+  if (error) throw error
+  const rows = (data ?? []) as CachedCustomer[]
+  const at = new Date().toISOString()
+
+  const db = getDB()
+  await db.transaction('rw', db.customers, db.syncMeta, async () => {
+    await db.customers.clear()
+    if (rows.length > 0) await db.customers.bulkAdd(rows)
+    await db.syncMeta.put({ key: 'customers', lastSyncAt: at, count: rows.length })
+  })
+
+  return { synced: rows.length, at }
+}
+
 /**
  * Run all syncs in parallel. Failures are caught per-entity so a transient
  * outage in one table doesn't poison the others.
@@ -75,16 +97,20 @@ export async function syncCategories(): Promise<SyncResult> {
 export async function syncAll(): Promise<{
   products: SyncResult | { error: string }
   categories: SyncResult | { error: string }
+  customers: SyncResult | { error: string }
 }> {
-  const [products, categories] = await Promise.all([
+  const [products, categories, customers] = await Promise.all([
     syncProducts().catch((err: unknown) => ({
       error: err instanceof Error ? err.message : 'Erro ao sincronizar produtos',
     })),
     syncCategories().catch((err: unknown) => ({
       error: err instanceof Error ? err.message : 'Erro ao sincronizar categorias',
     })),
+    syncCustomers().catch((err: unknown) => ({
+      error: err instanceof Error ? err.message : 'Erro ao sincronizar clientes',
+    })),
   ])
-  return { products, categories }
+  return { products, categories, customers }
 }
 
 /** Read a sync timestamp from the local cache. Returns null if never synced. */

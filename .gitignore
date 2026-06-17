@@ -50,3 +50,6 @@ next-env.d.ts
 
 # editor / tooling local config — not part of the project
 .claude/
+
+# offline credential cache (scrypt hashes, local machine only)
+.offline-credentials.json
