@@ -1,27 +1,24 @@
 /**
- * VendasApp — Electron desktop shell (Windows).
+ * NexSales — Electron desktop shell (Windows).
  *
- * This wraps the deployed PWA in a dedicated, installable desktop window.
- * It loads the hosted app (same backend/Supabase as the web and mobile),
- * so sales made on the desktop show up everywhere instantly.
+ * Architecture: spawns a local Next.js server so all page rendering and
+ * data queries happen entirely on this machine. SQLite is used as the local
+ * database when ELECTRON_APP=true, making the app fully offline-capable after
+ * the first online sync.
  *
- * Offline behaviour: Electron embeds Chromium, so the service worker and
- * IndexedDB layer the app already ships work exactly as they do in Chrome.
- * After the first online launch (needed to log in and cache the shell), the
- * app keeps working if the connection drops mid-use — and even on a cold
- * start while offline the service worker serves the cached shell, with sales
- * queued locally until the network returns.
- *
- * Point it elsewhere for local testing:
- *   set VENDAS_APP_URL=http://localhost:3000 && npm run desktop
+ * First launch requires internet (to log in and sync data from Supabase).
+ * After that the app works without any network connection.
  */
 
 const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron')
 const fs = require('node:fs/promises')
 const path = require('node:path')
+const { spawn } = require('node:child_process')
+const http = require('node:http')
 
-const APP_URL = process.env.VENDAS_APP_URL || 'https://vendas-app-topaz.vercel.app'
-const APP_ORIGIN = new URL(APP_URL).origin
+const NEXT_PORT = 3099
+const APP_URL = `http://localhost:${NEXT_PORT}`
+const APP_ORIGIN = APP_URL
 
 // A single instance only — a POS terminal shouldn't open the app twice.
 const gotLock = app.requestSingleInstanceLock()
@@ -31,6 +28,83 @@ if (!gotLock) {
 
 /** @type {BrowserWindow | null} */
 let mainWindow = null
+/** @type {import('node:child_process').ChildProcess | null} */
+let nextProcess = null
+
+// ─────────────────────────────────────────────
+//  Next.js server management
+// ─────────────────────────────────────────────
+
+function getProjectRoot() {
+  // app.isPackaged is true when running from an installed .exe
+  return app.isPackaged ? process.resourcesPath : path.join(__dirname, '..')
+}
+
+function getNextBin() {
+  const root = getProjectRoot()
+  const bin = path.join(root, 'node_modules', '.bin', 'next')
+  // On Windows, spawn needs the .cmd wrapper; shell:true handles this.
+  return bin
+}
+
+/** Poll until the local server responds with a non-5xx status. */
+function waitForServer(maxMs = 90_000) {
+  return new Promise((resolve, reject) => {
+    const deadline = Date.now() + maxMs
+    function check() {
+      const req = http.get(APP_URL, (res) => {
+        res.resume()
+        if (res.statusCode < 500) return resolve(undefined)
+        if (Date.now() < deadline) return setTimeout(check, 800)
+        reject(new Error('Server did not respond in time'))
+      })
+      req.on('error', () => {
+        if (Date.now() < deadline) setTimeout(check, 800)
+        else reject(new Error('Server did not start — connection refused after timeout'))
+      })
+      req.setTimeout(1500, () => req.destroy())
+    }
+    setTimeout(check, 600) // give the process a moment before first check
+  })
+}
+
+async function startNextServer() {
+  const root = getProjectRoot()
+  const dbPath = path.join(app.getPath('userData'), 'nexsales.db')
+  const args = app.isPackaged
+    ? ['start', '--port', String(NEXT_PORT)]
+    : ['dev', '--port', String(NEXT_PORT), '--turbopack']
+
+  nextProcess = spawn(getNextBin(), args, {
+    cwd: root,
+    env: {
+      ...process.env,
+      ELECTRON_APP: 'true',
+      DB_PATH: dbPath,
+      PORT: String(NEXT_PORT),
+    },
+    stdio: 'inherit',
+    // shell: true lets Windows resolve the .cmd shim without an explicit extension.
+    shell: process.platform === 'win32',
+  })
+
+  nextProcess.on('error', (err) => {
+    console.error('[Electron] Failed to start Next.js server:', err.message)
+  })
+
+  nextProcess.on('exit', (code) => {
+    if (code !== 0 && code !== null) {
+      console.error(`[Electron] Next.js server exited with code ${code}`)
+    }
+    nextProcess = null
+  })
+
+  await waitForServer()
+}
+
+// ─────────────────────────────────────────────
+//  Window
+// ─────────────────────────────────────────────
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -38,12 +112,11 @@ function createWindow() {
     height: 800,
     minWidth: 1024,
     minHeight: 680,
-    title: 'VendasApp',
+    title: 'NexSales',
     backgroundColor: '#0f172a',
     icon: path.join(__dirname, 'icon.png'),
     autoHideMenuBar: true,
     webPreferences: {
-      // Lock down the renderer — we load remote content, so no Node access.
       contextIsolation: true,
       nodeIntegration: false,
       preload: path.join(__dirname, 'preload.cjs'),
@@ -52,17 +125,12 @@ function createWindow() {
 
   mainWindow.loadURL(APP_URL)
 
-  // In-app links to our own origin open in-window; anything external (e.g. a
-  // payment provider, docs) opens in the user's real browser.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith(APP_ORIGIN)) return { action: 'allow' }
     shell.openExternal(url)
     return { action: 'deny' }
   })
 
-  // Keep the renderer pinned to our origin. If anything tries to navigate the
-  // window elsewhere (a redirect, an injected link), send it to the external
-  // browser instead — the desktop shell only ever shows the VendasApp app.
   mainWindow.webContents.on('will-navigate', (event, url) => {
     if (!url.startsWith(APP_ORIGIN)) {
       event.preventDefault()
@@ -70,12 +138,22 @@ function createWindow() {
     }
   })
 
+  // Trigger initial data sync once the page is loaded and the user is authenticated.
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow?.webContents.executeJavaScript(`
+      fetch('/api/sync', { method: 'POST' }).catch(() => {})
+    `).catch(() => {})
+  })
+
   mainWindow.on('closed', () => {
     mainWindow = null
   })
 }
 
-// Focus the existing window if a second launch is attempted.
+// ─────────────────────────────────────────────
+//  App lifecycle
+// ─────────────────────────────────────────────
+
 app.on('second-instance', () => {
   if (mainWindow) {
     if (mainWindow.isMinimized()) mainWindow.restore()
@@ -83,8 +161,39 @@ app.on('second-instance', () => {
   }
 })
 
-// Native print + PDF bridge for the cash-close report. The renderer exposes
-// these via `window.vendasDesktop` (see preload.cjs).
+app.whenReady().then(async () => {
+  try {
+    await startNextServer()
+    createWindow()
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    dialog.showErrorBox(
+      'Falha ao iniciar NexSales',
+      `Não foi possível iniciar o servidor local.\n\n${msg}\n\nVerifique se o Node.js está instalado e tente novamente.`,
+    )
+    app.quit()
+  }
+})
+
+app.on('before-quit', () => {
+  if (nextProcess) {
+    nextProcess.kill()
+    nextProcess = null
+  }
+})
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit()
+})
+
+// ─────────────────────────────────────────────
+//  Native print + PDF bridge
+// ─────────────────────────────────────────────
+
 ipcMain.handle('desktop:print', async (event) => {
   const win = BrowserWindow.fromWebContents(event.sender)
   if (!win) return { ok: false, reason: 'error', error: 'no-window' }
@@ -115,16 +224,4 @@ ipcMain.handle('desktop:save-pdf', async (event, opts) => {
   } catch (err) {
     return { ok: false, reason: 'error', error: err instanceof Error ? err.message : String(err) }
   }
-})
-
-app.whenReady().then(() => {
-  createWindow()
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-})
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
 })

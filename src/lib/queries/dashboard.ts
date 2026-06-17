@@ -3,8 +3,11 @@ import { createClient } from '@/lib/supabase/server'
 import type { Sale } from '@/types/database'
 import { startOfMonth, endOfMonth, subDays } from 'date-fns'
 import { brDayRangeUTC, formatBRDayMonth, todayBRISO } from '@/lib/utils/datetime'
+import { isElectron } from '@/lib/db/client'
+import * as sqliteQueries from '@/lib/db/queries/dashboard'
 
 export async function getDashboardMetrics() {
+  if (isElectron()) return sqliteQueries.getDashboardMetrics()
   const supabase = await createClient()
   const now = new Date()
   // "Today" from the cashier's wall clock, not the UTC server's.
@@ -56,6 +59,7 @@ export async function getDashboardMetrics() {
 }
 
 export async function getSalesLast30Days() {
+  if (isElectron()) return sqliteQueries.getSalesLast30Days()
   const supabase = await createClient()
   const now = new Date()
   const from = subDays(now, 29)

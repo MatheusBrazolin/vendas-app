@@ -1,6 +1,8 @@
 import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import type { Category, ProductWithCategory } from '@/types/database'
+import { isElectron } from '@/lib/db/client'
+import * as sqliteQueries from '@/lib/db/queries/products'
 
 export type StockFilter = 'all' | 'ok' | 'low' | 'out'
 
@@ -25,6 +27,7 @@ const DEFAULT_PAGE_SIZE = 20
 export async function getProductsPaged(
   params: ProductsListParams = {},
 ): Promise<ProductsListResult> {
+  if (isElectron()) return sqliteQueries.getProductsPaged(params)
   const supabase = await createClient()
   const page = Math.max(1, params.page ?? 1)
   const pageSize = Math.max(1, Math.min(100, params.pageSize ?? DEFAULT_PAGE_SIZE))
@@ -74,6 +77,7 @@ export async function getProductsPaged(
 }
 
 export async function getLowStock(): Promise<ProductWithCategory[]> {
+  if (isElectron()) return sqliteQueries.getLowStock()
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -91,6 +95,7 @@ export async function getLowStock(): Promise<ProductWithCategory[]> {
 }
 
 export async function getCategories(): Promise<Category[]> {
+  if (isElectron()) return sqliteQueries.getCategories()
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('categories')

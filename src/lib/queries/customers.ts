@@ -1,6 +1,8 @@
 import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import type { CustomerBalance, Customer, DebtPayment, Sale } from '@/types/database'
+import { isElectron } from '@/lib/db/client'
+import * as sqliteQueries from '@/lib/db/queries/customers'
 
 export interface PaymentReceiptData {
   payment: DebtPayment
@@ -9,6 +11,7 @@ export interface PaymentReceiptData {
 }
 
 export async function getCustomersWithDebt(): Promise<CustomerBalance[]> {
+  if (isElectron()) return sqliteQueries.getCustomersWithDebt()
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('customer_balances')
@@ -29,6 +32,7 @@ export interface CustomerDetails {
 }
 
 export async function getCustomerDetails(id: string): Promise<CustomerDetails | null> {
+  if (isElectron()) return sqliteQueries.getCustomerDetails(id)
   const supabase = await createClient()
 
   const [customerRes, salesRes, paymentsRes, balanceRes] = await Promise.all([
@@ -74,6 +78,7 @@ export async function getPaymentReceipt(
   customerId: string,
   paymentId: string,
 ): Promise<PaymentReceiptData | null> {
+  if (isElectron()) return sqliteQueries.getPaymentReceipt(customerId, paymentId)
   const supabase = await createClient()
 
   const [paymentRes, customerRes, balanceRes] = await Promise.all([

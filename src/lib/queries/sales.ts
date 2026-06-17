@@ -2,6 +2,8 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { brDayRangeUTC } from '@/lib/utils/datetime'
 import type { PaymentMethod, Sale, SaleWithItems } from '@/types/database'
+import { isElectron } from '@/lib/db/client'
+import * as sqliteQueries from '@/lib/db/queries/sales'
 
 export interface SalesListParams {
   payment?: PaymentMethod
@@ -24,6 +26,7 @@ const DEFAULT_PAGE_SIZE = 25
 export async function getSalesPaged(
   params: SalesListParams = {},
 ): Promise<SalesListResult> {
+  if (isElectron()) return sqliteQueries.getSalesPaged(params)
   const supabase = await createClient()
   const page = Math.max(1, params.page ?? 1)
   const pageSize = Math.max(1, Math.min(100, params.pageSize ?? DEFAULT_PAGE_SIZE))
@@ -66,6 +69,7 @@ export async function getSalesPaged(
 }
 
 export async function getSaleById(id: string): Promise<SaleWithItems | null> {
+  if (isElectron()) return sqliteQueries.getSaleById(id)
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -79,6 +83,7 @@ export async function getSaleById(id: string): Promise<SaleWithItems | null> {
 }
 
 export async function getTopProducts(limit = 5) {
+  if (isElectron()) return sqliteQueries.getTopProducts(limit)
   const supabase = await createClient()
 
   const { data, error } = await supabase

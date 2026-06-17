@@ -18,7 +18,8 @@
     "e2e:report": "playwright show-report",
     "pwa:icons": "node scripts/generate-pwa-icons.mjs",
     "desktop": "electron .",
-    "desktop:build": "electron-builder --win"
+    "desktop:build": "next build && electron-builder --win",
+    "desktop:rebuild-sqlite": "npx electron-rebuild -f -w better-sqlite3"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -26,6 +27,7 @@
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.1",
     "@vercel/speed-insights": "^2.0.0",
+    "better-sqlite3": "^12.11.1",
     "class-variance-authority": "^0.7.1",
     "client-only": "^0.0.1",
     "clsx": "^2.1.1",
@@ -53,6 +55,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.0",
     "@types/react": "^19",
@@ -61,6 +64,7 @@
     "@vitest/coverage-v8": "^2.1.9",
     "electron": "^33.3.0",
     "electron-builder": "^25.1.8",
+    "electron-rebuild": "^3.2.9",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
@@ -75,8 +79,15 @@
     },
     "artifactName": "NexSales-Instalador.${ext}",
     "files": [
-      "electron/**/*"
+      "electron/**/*",
+      ".next/**/*",
+      "public/**/*",
+      "package.json",
+      "next.config.ts",
+      "tsconfig.json",
+      "node_modules/**/*"
     ],
+    "asar": false,
     "win": {
       "target": [
         "nsis"
