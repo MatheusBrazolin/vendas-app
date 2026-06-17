@@ -1,30 +1,11 @@
 'server-only'
 
-/**
- * Creates the `nx-offline-session` cookie that keeps a user logged in after
- * an offline login (when no real Supabase session exists).
- *
- * The middleware validates this cookie without Node.js crypto (Edge-compatible)
- * by only checking the expiry from the decoded payload.  For a local/intranet
- * POS deployment that's acceptable — the cookie is HttpOnly so it can only
- * be set here, server-side.
- */
-
 import { createHmac, timingSafeEqual } from 'crypto'
 
 export const OFFLINE_COOKIE_NAME = 'nx-offline-session'
 
 /** 24 hours — re-login required each day when the store opens offline. */
 const MAX_AGE_SECONDS = 24 * 60 * 60
-
-const SECRET = process.env.OFFLINE_SESSION_SECRET
-if (!SECRET) {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('OFFLINE_SESSION_SECRET env var must be set in production')
-  }
-  console.warn('[offline-cookie] OFFLINE_SESSION_SECRET not set — using insecure dev fallback. Set it before going to production.')
-}
-const EFFECTIVE_SECRET = SECRET ?? 'nexsales-offline-dev-only-fallback'
 
 interface OfflineSessionPayload {
   userId: string
@@ -33,8 +14,27 @@ interface OfflineSessionPayload {
   exp: number
 }
 
+/**
+ * Resolves the signing secret lazily at call time (not at module load).
+ * This prevents `next build` from throwing when the env var is absent in CI.
+ * At runtime in production the app will throw if the var was never configured.
+ */
+function getSecret(): string {
+  const secret = process.env.OFFLINE_SESSION_SECRET
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('OFFLINE_SESSION_SECRET env var must be set in production')
+    }
+    console.warn(
+      '[offline-cookie] OFFLINE_SESSION_SECRET not set — using insecure dev fallback. Set it before going to production.',
+    )
+    return 'nexsales-offline-dev-only-fallback'
+  }
+  return secret
+}
+
 function sign(data: string): string {
-  return createHmac('sha256', EFFECTIVE_SECRET).update(data).digest('base64url')
+  return createHmac('sha256', getSecret()).update(data).digest('base64url')
 }
 
 export function createOfflineSessionCookie(
