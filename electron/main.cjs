@@ -40,11 +40,10 @@ function getProjectRoot() {
   return app.isPackaged ? process.resourcesPath : path.join(__dirname, '..')
 }
 
-function getNextBin() {
-  const root = getProjectRoot()
-  const bin = path.join(root, 'node_modules', '.bin', 'next')
-  // On Windows, spawn needs the .cmd wrapper; shell:true handles this.
-  return bin
+// Use node to run the Next.js script directly — avoids shell quoting issues
+// with paths that contain spaces (common on Windows user directories).
+function getNextScript() {
+  return path.join(getProjectRoot(), 'node_modules', 'next', 'dist', 'bin', 'next')
 }
 
 /** Poll until the local server responds with a non-5xx status. */
@@ -75,7 +74,7 @@ async function startNextServer() {
     ? ['start', '--port', String(NEXT_PORT)]
     : ['dev', '--port', String(NEXT_PORT), '--turbopack']
 
-  nextProcess = spawn(getNextBin(), args, {
+  nextProcess = spawn('node', [getNextScript(), ...args], {
     cwd: root,
     env: {
       ...process.env,
@@ -83,9 +82,8 @@ async function startNextServer() {
       DB_PATH: dbPath,
       PORT: String(NEXT_PORT),
     },
-    stdio: 'inherit',
-    // shell: true lets Windows resolve the .cmd shim without an explicit extension.
-    shell: process.platform === 'win32',
+    // Pipe stderr so startup errors appear in the Electron process console.
+    stdio: ['ignore', 'inherit', 'inherit'],
   })
 
   nextProcess.on('error', (err) => {
