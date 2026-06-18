@@ -65,10 +65,20 @@ export async function signIn(usernameOrEmail: string, password: string) {
   if (error) {
     if (isNetworkError(error)) {
       // Supabase unreachable — attempt offline authentication
-      const offlineUser = verifyOfflineCredentials(email, password)
+      let offlineUser: { userId: string; email: string; role: string } | null = null
+      let diagError: string | null = null
+
+      try {
+        offlineUser = verifyOfflineCredentials(email, password)
+      } catch (e) {
+        diagError = e instanceof Error ? e.message : String(e)
+      }
 
       if (offlineUser) {
-        // Valid local credentials: issue an offline session cookie and redirect
+        // Valid local credentials: issue an offline session cookie then redirect.
+        // redirect() sends Set-Cookie + Location in the same 303 response so the
+        // browser commits the cookie before following the redirect — more reliable
+        // than setting the cookie then doing client-side navigation.
         const session = createOfflineSessionCookie(
           offlineUser.userId,
           offlineUser.email,
@@ -82,6 +92,10 @@ export async function signIn(usernameOrEmail: string, password: string) {
           path: '/',
         })
         redirect(offlineUser.role === 'admin' ? '/dashboard' : '/vendas/nova')
+      }
+
+      if (diagError) {
+        return { error: `[DIAG] ${diagError}`, offline: true }
       }
 
       return {

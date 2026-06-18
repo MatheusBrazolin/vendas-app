@@ -27,83 +27,89 @@ const DEFAULT_PAGE_SIZE = 20
 export async function getProductsPaged(
   params: ProductsListParams = {},
 ): Promise<ProductsListResult> {
-  if (isElectron()) return sqliteQueries.getProductsPaged(params)
-  const supabase = await createClient()
-  const page = Math.max(1, params.page ?? 1)
-  const pageSize = Math.max(1, Math.min(100, params.pageSize ?? DEFAULT_PAGE_SIZE))
+  try {
+    const supabase = await createClient()
+    const page = Math.max(1, params.page ?? 1)
+    const pageSize = Math.max(1, Math.min(100, params.pageSize ?? DEFAULT_PAGE_SIZE))
 
-  let query = supabase
-    .from('products')
-    .select('*, categories(id, name)', { count: 'exact' })
-    .eq('is_active', true)
+    let query = supabase
+      .from('products')
+      .select('*, categories(id, name)', { count: 'exact' })
+      .eq('is_active', true)
 
-  if (params.search) {
-    const s = sanitizeForIlike(params.search)
-    query = query.or(`name.ilike.%${s}%,code.ilike.%${s}%`)
+    if (params.search) {
+      const s = sanitizeForIlike(params.search)
+      query = query.or(`name.ilike.%${s}%,code.ilike.%${s}%`)
+    }
+
+    if (params.categoryId) {
+      query = query.eq('category_id', params.categoryId)
+    }
+
+    if (params.stock === 'out') {
+      query = query.lte('stock_quantity', 0)
+    }
+
+    const from = (page - 1) * pageSize
+    const to = from + pageSize - 1
+    query = query.order('name').range(from, to)
+
+    const { data, error, count } = await query
+    if (error) throw new Error(error.message)
+
+    let items = (data ?? []) as ProductWithCategory[]
+
+    if (params.stock === 'low') {
+      items = items.filter((p) => p.stock_quantity > 0 && p.stock_quantity <= p.min_stock)
+    } else if (params.stock === 'ok') {
+      items = items.filter((p) => p.stock_quantity > p.min_stock)
+    }
+
+    const total = count ?? items.length
+    const totalPages = Math.max(1, Math.ceil(total / pageSize))
+
+    return { items, total, page, pageSize, totalPages }
+  } catch (err) {
+    if (isElectron()) return sqliteQueries.getProductsPaged(params)
+    throw err
   }
-
-  if (params.categoryId) {
-    query = query.eq('category_id', params.categoryId)
-  }
-
-  // Stock filters: 'out' = stock <= 0, 'low' = stock <= min_stock (and > 0),
-  // 'ok' = stock > min_stock. PostgREST doesn't support column-vs-column
-  // comparisons natively, so we fetch a wider range and filter in memory only
-  // for 'low' and 'ok'. 'out' and 'all' map cleanly to SQL.
-  if (params.stock === 'out') {
-    query = query.lte('stock_quantity', 0)
-  }
-
-  const from = (page - 1) * pageSize
-  const to = from + pageSize - 1
-
-  query = query.order('name').range(from, to)
-
-  const { data, error, count } = await query
-  if (error) throw new Error(error.message)
-
-  let items = (data ?? []) as ProductWithCategory[]
-
-  if (params.stock === 'low') {
-    items = items.filter((p) => p.stock_quantity > 0 && p.stock_quantity <= p.min_stock)
-  } else if (params.stock === 'ok') {
-    items = items.filter((p) => p.stock_quantity > p.min_stock)
-  }
-
-  const total = count ?? items.length
-  const totalPages = Math.max(1, Math.ceil(total / pageSize))
-
-  return { items, total, page, pageSize, totalPages }
 }
 
 export async function getLowStock(): Promise<ProductWithCategory[]> {
-  if (isElectron()) return sqliteQueries.getLowStock()
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, categories(id, name)')
+      .eq('is_active', true)
+      .order('stock_quantity')
+      .limit(50)
 
-  const { data, error } = await supabase
-    .from('products')
-    .select('*, categories(id, name)')
-    .eq('is_active', true)
-    .order('stock_quantity')
-    .limit(50)
+    if (error) throw new Error(error.message)
 
-  if (error) throw new Error(error.message)
-
-  return ((data ?? []) as ProductWithCategory[]).filter(
-    (p) => p.stock_quantity <= p.min_stock,
-  )
+    return ((data ?? []) as ProductWithCategory[]).filter(
+      (p) => p.stock_quantity <= p.min_stock,
+    )
+  } catch (err) {
+    if (isElectron()) return sqliteQueries.getLowStock()
+    throw err
+  }
 }
 
 export async function getCategories(): Promise<Category[]> {
-  if (isElectron()) return sqliteQueries.getCategories()
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .order('name')
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('name')
 
-  if (error) throw new Error(error.message)
-  return (data ?? []) as Category[]
+    if (error) throw new Error(error.message)
+    return (data ?? []) as Category[]
+  } catch (err) {
+    if (isElectron()) return sqliteQueries.getCategories()
+    throw err
+  }
 }
 
 /** Escape characters that break PostgREST's `or()` filter syntax. */

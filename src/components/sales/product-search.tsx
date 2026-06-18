@@ -335,9 +335,16 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
               onMouseEnter={() => setHighlightedIndex(index)}
             >
               <div className="min-w-0 flex-1">
-                <p className={`text-sm font-medium truncate ${index === highlightedIndex ? 'text-primary/80' : ''}`}>
-                  {product.name}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className={`text-sm font-medium truncate ${index === highlightedIndex ? 'text-primary/80' : ''}`}>
+                    {product.name}
+                  </p>
+                  {product.stock_quantity <= 0 && (
+                    <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400">
+                      Sem estoque
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-slate-500">
                   Cód: {product.code} · Estoque: {product.stock_quantity} ·{' '}
                   {formatCurrency(product.sale_price)}

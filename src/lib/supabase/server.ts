@@ -3,13 +3,31 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database } from '@/types/database'
 
+// Must be lower than tryQuery's default (5000ms) so the SQLite offline fallback
+// in each query function has time to run before tryQuery gives up entirely.
+const QUERY_TIMEOUT_MS = 3_000
+
+/**
+ * Creates a Supabase server client whose fetch calls are automatically aborted
+ * after QUERY_TIMEOUT_MS. This prevents offline/unreachable-Supabase scenarios
+ * from accumulating hanging connections in the Node.js event loop (which causes
+ * the blank-screen crash in Electron after multiple offline navigations).
+ *
+ * The AbortError propagates out of query functions → caught by tryQuery() → returns fallback.
+ */
 export async function createClient() {
   const cookieStore = await cookies()
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), QUERY_TIMEOUT_MS)
 
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: {
+        fetch: (url: RequestInfo | URL, init?: RequestInit) =>
+          fetch(url, { ...init, signal: controller.signal }),
+      },
       cookies: {
         getAll() {
           return cookieStore.getAll()
@@ -20,7 +38,7 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             )
           } catch {
-            // Server Component context — cookies set pela middleware
+            // Server Component context — cookies set by middleware
           }
         },
       },

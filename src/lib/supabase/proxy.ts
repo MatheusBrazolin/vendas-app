@@ -75,13 +75,14 @@ export async function updateSession(request: NextRequest) {
 
     if (data.user) {
       user = data.user
-    } else if (error && isNetworkError(error)) {
-      // Supabase unreachable or timed out — trust local session data
+    } else {
+      // No Supabase user — fall back to local session cookies.
+      // This covers: network errors, expired tokens, AND fresh offline logins
+      // where no Supabase auth cookie exists (getUser returns null/null).
       user =
         getUserFromSessionCookie(request) ??
         (await getUserFromOfflineCookie(request))
     }
-    // auth errors (wrong token, expired) leave user as null → redirect to login
   } catch {
     // AbortError from the timeout, or any unexpected throw
     user =

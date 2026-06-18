@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { isAdmin } from '@/lib/auth/roles'
+import { isElectron } from '@/lib/db/client'
+import { pullSingleSale, deleteLocalSale } from '@/lib/db/sync'
 import type { Json, PaymentMethod } from '@/types/database'
 
 interface SaleItem {
@@ -73,11 +75,21 @@ export async function createSale(input: CreateSaleInput): Promise<CreateSaleResu
     return { error: error.message, code: 'unknown' }
   }
 
+  const saleId = data as string
+
+  // In Electron, pages read from SQLite — pull the new sale into SQLite immediately
+  // so Histórico and Dashboard reflect the sale without waiting for the next periodic sync.
+  if (isElectron()) {
+    await pullSingleSale(saleId).catch((err) => {
+      console.warn('[electron] pullSingleSale failed, will sync on next cycle:', err)
+    })
+  }
+
   revalidatePath('/vendas')
   revalidatePath('/produtos')
   revalidatePath('/dashboard')
 
-  return { saleId: data as string }
+  return { saleId }
 }
 
 export interface CancelSaleResult {
@@ -118,6 +130,13 @@ export async function cancelSale(saleId: string): Promise<CancelSaleResult> {
       }
     }
     return { success: false, error: error.message }
+  }
+
+  // In Electron, delete the sale from SQLite immediately and restore product stock.
+  if (isElectron()) {
+    await deleteLocalSale(saleId).catch((err) => {
+      console.warn('[electron] deleteLocalSale failed, will sync on next cycle:', err)
+    })
   }
 
   // Invalidate every surface that derives data from sales/stock.

@@ -139,6 +139,75 @@ function _upsertDebtPayments(rows: DebtPayment[]): void {
   for (const r of rows) stmt.run(r.id, r.customer_id, r.amount, r.notes ?? null, r.recorded_by, r.created_at)
 }
 
+/**
+ * After a successful createSale() RPC, pulls just that sale + its items +
+ * the affected products (to reflect the decremented stock) into SQLite so
+ * pages that read from SQLite (Histórico, Dashboard) show the sale immediately
+ * instead of waiting for the next periodic sync cycle.
+ *
+ * Called from the createSale server action when isElectron() is true.
+ * Failures are swallowed — the periodic sync will pick up the data within 60s.
+ */
+export async function pullSingleSale(saleId: string): Promise<void> {
+  const supabase = await createClient()
+  const db = getDb()
+
+  const [saleRes, itemsRes] = await Promise.all([
+    supabase.from('sales').select('*').eq('id', saleId).single(),
+    supabase.from('sale_items').select('*').eq('sale_id', saleId),
+  ])
+
+  if (!saleRes.data) return
+
+  const sale = saleRes.data as Sale
+  const items = (itemsRes.data ?? []) as SaleItem[]
+
+  const productIds = items.map((i) => i.product_id)
+  let products: Product[] = []
+  if (productIds.length > 0) {
+    const { data } = await supabase.from('products').select('*').in('id', productIds)
+    products = (data ?? []) as Product[]
+  }
+
+  db.transaction(() => {
+    _upsertSales([sale])
+    _upsertSaleItems(items)
+    if (products.length > 0) _upsertProducts(products)
+  })()
+}
+
+/**
+ * When a sale is cancelled (admin action), removes it from SQLite and restores
+ * the product stock by re-fetching the affected products from Supabase.
+ * Called from the cancelSale server action when isElectron() is true.
+ */
+export async function deleteLocalSale(saleId: string): Promise<void> {
+  const db = getDb()
+
+  // Read affected product IDs before deleting so we can refresh their stock.
+  const affectedProductIds = (
+    db
+      .prepare(`SELECT product_id FROM sale_items WHERE sale_id = ?`)
+      .all(saleId) as { product_id: string }[]
+  ).map((r) => r.product_id)
+
+  db.transaction(() => {
+    db.prepare(`DELETE FROM sale_items WHERE sale_id = ?`).run(saleId)
+    db.prepare(`DELETE FROM sales WHERE id = ?`).run(saleId)
+  })()
+
+  // Refresh product stock from Supabase so the PDV shows correct availability.
+  if (affectedProductIds.length > 0) {
+    try {
+      const supabase = await createClient()
+      const { data } = await supabase.from('products').select('*').in('id', affectedProductIds)
+      if (data && data.length > 0) _upsertProducts(data as Product[])
+    } catch {
+      // Best-effort — periodic sync will pick up stock updates within 60s.
+    }
+  }
+}
+
 // Processes pending sync_queue entries and applies them to Supabase.
 // Returns the number of events successfully pushed.
 async function pushPendingQueue(): Promise<number> {

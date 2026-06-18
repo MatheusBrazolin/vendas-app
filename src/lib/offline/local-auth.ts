@@ -9,11 +9,21 @@
  */
 
 import { scryptSync, timingSafeEqual, randomBytes } from 'crypto'
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from 'fs'
 import { join, dirname } from 'path'
 
 const CREDS_FILE = join(process.cwd(), '.offline-credentials.json')
+const DEBUG_LOG = join(process.cwd(), '.offline-auth-debug.log')
 const KEY_LEN = 64
+
+function debugLog(msg: string): void {
+  try {
+    const line = `[${new Date().toISOString()}] ${msg}\n`
+    appendFileSync(DEBUG_LOG, line, 'utf8')
+  } catch {
+    // ignore logging failures
+  }
+}
 
 interface StoredCredential {
   hash: string
@@ -78,22 +88,31 @@ export function saveOfflineCredentials(
 
 /**
  * Verifies credentials against the local hash file.
- * Returns user info on match, null otherwise.
+ * Returns user info on match, null on mismatch, throws with diagnostic on error.
  */
 export function verifyOfflineCredentials(
   email: string,
   password: string,
 ): { userId: string; email: string; role: string } | null {
-  try {
-    const store = readStore()
-    const cred = store[email]
-    if (!cred) return null
-
-    const hash = hashPassword(password, cred.salt)
-    if (!safeEqual(hash, cred.hash)) return null
-
-    return { userId: cred.userId, email: cred.email, role: cred.role }
-  } catch {
-    return null
+  const fileExists = existsSync(CREDS_FILE)
+  if (!fileExists) {
+    throw new Error(`OFFLINE_AUTH_DIAG: file not found at "${CREDS_FILE}"`)
   }
+
+  const store = readStore()
+  const keys = Object.keys(store)
+
+  const cred = store[email]
+  if (!cred) {
+    throw new Error(
+      `OFFLINE_AUTH_DIAG: email "${email}" not in store. Keys: ${JSON.stringify(keys)}`,
+    )
+  }
+
+  const hash = hashPassword(password, cred.salt)
+  if (!safeEqual(hash, cred.hash)) {
+    return null  // wrong password — do NOT expose details
+  }
+
+  return { userId: cred.userId, email: cred.email, role: cred.role }
 }

@@ -11,15 +11,19 @@ export interface PaymentReceiptData {
 }
 
 export async function getCustomersWithDebt(): Promise<CustomerBalance[]> {
-  if (isElectron()) return sqliteQueries.getCustomersWithDebt()
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('customer_balances')
-    .select('*')
-    .order('current_debt', { ascending: false })
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('customer_balances')
+      .select('*')
+      .order('current_debt', { ascending: false })
 
-  if (error) throw error
-  return data as CustomerBalance[]
+    if (error) throw error
+    return data as CustomerBalance[]
+  } catch (err) {
+    if (isElectron()) return sqliteQueries.getCustomersWithDebt()
+    throw err
+  }
 }
 
 export interface CustomerDetails {
@@ -32,45 +36,49 @@ export interface CustomerDetails {
 }
 
 export async function getCustomerDetails(id: string): Promise<CustomerDetails | null> {
-  if (isElectron()) return sqliteQueries.getCustomerDetails(id)
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const [customerRes, salesRes, paymentsRes, balanceRes] = await Promise.all([
-    supabase.from('customers').select('*').eq('id', id).single(),
-    supabase
-      .from('sales')
-      .select('*, sale_items(quantity, unit_price, subtotal, products(name))')
-      .eq('customer_id', id)
-      .eq('payment_method', 'fiado')
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('debt_payments')
-      .select('*')
-      .eq('customer_id', id)
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('customer_balances')
-      .select('total_fiado, total_paid, current_debt')
-      .eq('id', id)
-      .single(),
-  ])
+    const [customerRes, salesRes, paymentsRes, balanceRes] = await Promise.all([
+      supabase.from('customers').select('*').eq('id', id).single(),
+      supabase
+        .from('sales')
+        .select('*, sale_items(quantity, unit_price, subtotal, products(name))')
+        .eq('customer_id', id)
+        .eq('payment_method', 'fiado')
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('debt_payments')
+        .select('*')
+        .eq('customer_id', id)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('customer_balances')
+        .select('total_fiado, total_paid, current_debt')
+        .eq('id', id)
+        .single(),
+    ])
 
-  if (customerRes.error || !customerRes.data) return null
+    if (customerRes.error || !customerRes.data) return null
 
-  const fiadoSales = (salesRes.data ?? []) as CustomerDetails['fiadoSales']
-  const debtPayments = (paymentsRes.data ?? []) as DebtPayment[]
+    const fiadoSales = (salesRes.data ?? []) as CustomerDetails['fiadoSales']
+    const debtPayments = (paymentsRes.data ?? []) as DebtPayment[]
 
-  const totalFiado = balanceRes.data?.total_fiado ?? fiadoSales.reduce((sum, s) => sum + s.total_amount, 0)
-  const totalPaid = balanceRes.data?.total_paid ?? debtPayments.reduce((sum, p) => sum + p.amount, 0)
-  const currentDebt = balanceRes.data?.current_debt ?? (totalFiado - totalPaid)
+    const totalFiado = balanceRes.data?.total_fiado ?? fiadoSales.reduce((sum, s) => sum + s.total_amount, 0)
+    const totalPaid = balanceRes.data?.total_paid ?? debtPayments.reduce((sum, p) => sum + p.amount, 0)
+    const currentDebt = balanceRes.data?.current_debt ?? (totalFiado - totalPaid)
 
-  return {
-    customer: customerRes.data as Customer,
-    fiadoSales,
-    debtPayments,
-    totalFiado,
-    totalPaid,
-    currentDebt,
+    return {
+      customer: customerRes.data as Customer,
+      fiadoSales,
+      debtPayments,
+      totalFiado,
+      totalPaid,
+      currentDebt,
+    }
+  } catch {
+    if (isElectron()) return sqliteQueries.getCustomerDetails(id)
+    return null
   }
 }
 
@@ -78,21 +86,25 @@ export async function getPaymentReceipt(
   customerId: string,
   paymentId: string,
 ): Promise<PaymentReceiptData | null> {
-  if (isElectron()) return sqliteQueries.getPaymentReceipt(customerId, paymentId)
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const [paymentRes, customerRes, balanceRes] = await Promise.all([
-    supabase.from('debt_payments').select('*').eq('id', paymentId).eq('customer_id', customerId).single(),
-    supabase.from('customers').select('*').eq('id', customerId).single(),
-    supabase.from('customer_balances').select('current_debt').eq('id', customerId).single(),
-  ])
+    const [paymentRes, customerRes, balanceRes] = await Promise.all([
+      supabase.from('debt_payments').select('*').eq('id', paymentId).eq('customer_id', customerId).single(),
+      supabase.from('customers').select('*').eq('id', customerId).single(),
+      supabase.from('customer_balances').select('current_debt').eq('id', customerId).single(),
+    ])
 
-  if (paymentRes.error || !paymentRes.data) return null
-  if (customerRes.error || !customerRes.data) return null
+    if (paymentRes.error || !paymentRes.data) return null
+    if (customerRes.error || !customerRes.data) return null
 
-  return {
-    payment: paymentRes.data as DebtPayment,
-    customer: customerRes.data as Customer,
-    remainingDebt: balanceRes.data?.current_debt ?? 0,
+    return {
+      payment: paymentRes.data as DebtPayment,
+      customer: customerRes.data as Customer,
+      remainingDebt: balanceRes.data?.current_debt ?? 0,
+    }
+  } catch {
+    if (isElectron()) return sqliteQueries.getPaymentReceipt(customerId, paymentId)
+    return null
   }
 }

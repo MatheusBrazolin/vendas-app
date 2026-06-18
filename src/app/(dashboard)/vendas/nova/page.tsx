@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth/roles'
 import { PDV } from './pdv'
 
 export default async function NovaVendaPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
+  // getCurrentUser() has a 3s abort timeout and falls back to the
+  // nx-offline-session cookie, so the PDV stays accessible when offline.
+  const user = await getCurrentUser()
   if (!user) redirect('/login')
 
   return (

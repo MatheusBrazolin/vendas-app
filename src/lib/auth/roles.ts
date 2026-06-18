@@ -41,10 +41,13 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       global: {
+        // Do NOT clearTimeout inside this wrapper — Supabase auth.getUser() may
+        // issue multiple sequential fetches (e.g. token refresh then user check).
+        // Clearing the timer after the first fetch would leave the second without
+        // a deadline, causing 10-second hangs when offline. The outer finally{}
+        // block handles cleanup once the whole getUser() call settles.
         fetch: (url: RequestInfo | URL, init?: RequestInit) =>
-          fetch(url, { ...init, signal: controller.signal }).finally(() =>
-            clearTimeout(abortTimer),
-          ),
+          fetch(url, { ...init, signal: controller.signal }),
       },
       cookies: {
         getAll() {

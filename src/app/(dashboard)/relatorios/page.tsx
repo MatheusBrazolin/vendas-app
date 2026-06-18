@@ -2,10 +2,12 @@ import Link from 'next/link'
 import { TrendingUp, TrendingDown, ShoppingCart, DollarSign, Percent } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { requireAdmin } from '@/lib/auth/roles'
-import { getDREReport, PERIOD_LABELS, type DREPeriod } from '@/lib/queries/dre'
+import { getDREReport, PERIOD_LABELS, type DREPeriod, type DREResult } from '@/lib/queries/dre'
 import { formatCurrency } from '@/lib/utils/format'
 import { PAYMENT_LABELS } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
+import { tryQuery } from '@/lib/supabase/try-query'
+import { OfflineBanner } from '@/components/offline/offline-banner'
 
 export const metadata = { title: 'Relatório de lucro' }
 
@@ -63,13 +65,28 @@ export default async function RelatoriosPage({
   const sp = await searchParams
   const period: DREPeriod = isPeriod(sp.period) ? sp.period : 'this-month'
 
-  const dre = await getDREReport(period)
+  const EMPTY_DRE: DREResult = {
+    revenue: 0,
+    cost: 0,
+    grossProfit: 0,
+    grossMargin: 0,
+    salesCount: 0,
+    byPayment: {},
+    topProducts: [],
+  }
+  const { data: dre, offline } = await tryQuery(
+    () => getDREReport(period),
+    EMPTY_DRE,
+  )
 
   const marginColor =
     dre.grossMargin >= 30 ? 'green' : dre.grossMargin >= 10 ? 'slate' : 'red'
 
   return (
     <div className="space-y-6">
+      {offline && (
+        <OfflineBanner message="Sem conexão — relatório indisponível offline." />
+      )}
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Relatório de lucro</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
