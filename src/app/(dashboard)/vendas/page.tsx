@@ -110,7 +110,7 @@ export default async function VendasPage({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6 h-full">
       {offline && (
         <OfflineBanner message="Sem conexão — histórico de vendas indisponível offline." />
       )}
@@ -144,7 +144,7 @@ export default async function VendasPage({
         </div>
       </div>
 
-      <Card className="border-slate-200/80 dark:border-white/8 shadow-sm dark:bg-slate-800/60">
+      <Card className="flex flex-col flex-1 min-h-0 border-slate-200/80 dark:border-white/8 shadow-sm dark:bg-slate-800/60">
         <SalesFilters
           payment={payment ?? ''}
           day={day ?? ''}
@@ -152,7 +152,7 @@ export default async function VendasPage({
           lockedDay={isEmployee}
         />
 
-        <div className="overflow-x-auto">
+        <div className="flex-1 overflow-auto min-h-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-slate-100 dark:border-white/5">

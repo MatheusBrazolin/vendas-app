@@ -55,7 +55,7 @@ function TrendBadge({ trend, label }: { trend: Trend; label: string }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${className}`}
+      className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap shrink-0 ${className}`}
     >
       <Icon className="h-3 w-3" />
       {label}
@@ -169,22 +169,20 @@ export function KpiCards({
               style={{ backgroundColor: card.accentColor }}
             />
             <div className="p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                    {card.title}
-                  </p>
-                  <p className="mt-2 text-[26px] font-bold text-slate-900 dark:text-slate-50 leading-none tabular-nums">
-                    {card.value}
-                  </p>
-                </div>
+              <div className="flex items-start justify-between gap-3 mb-4">
                 <div className={`p-2.5 rounded-xl ${card.iconBg} shrink-0`}>
                   <Icon className={`h-5 w-5 ${card.iconColor}`} />
                 </div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 text-right leading-tight">
+                  {card.title}
+                </p>
               </div>
-              <div className="mt-4 flex items-center justify-between gap-2">
+              <p className="text-[28px] font-bold text-slate-900 dark:text-slate-50 leading-none tabular-nums mb-4">
+                {card.value}
+              </p>
+              <div className="flex items-center gap-2">
                 <TrendBadge trend={card.trend} label={card.trendLabel} />
-                <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{card.sub}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500 truncate">{card.sub}</span>
               </div>
             </div>
           </motion.div>

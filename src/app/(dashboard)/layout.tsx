@@ -16,7 +16,7 @@ export default async function DashboardLayout({
   if (!user) redirect('/login')
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 relative">
+    <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 relative">
       {/* Gradient blobs — give glassmorphism cards something to blur against */}
       <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden" aria-hidden>
         <div className="absolute top-28 left-[22%] h-[560px] w-[560px] rounded-full blur-[140px] bg-primary/8 dark:bg-primary/20" />
@@ -26,7 +26,7 @@ export default async function DashboardLayout({
       <Sidebar role={user.role} />
       <div className="flex-1 flex flex-col min-w-0">
         <Header />
-        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">{children}</main>
+        <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">{children}</main>
       </div>
       {/* Offline plumbing — only mounted for authenticated users since the
           sync calls would 401 without a session and the offline banner only

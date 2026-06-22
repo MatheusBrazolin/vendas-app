@@ -19,9 +19,10 @@ import { recordDebtPayment } from '../actions'
 interface DebtPaymentFormProps {
   customerId: string
   customerName: string
+  totalDebt: number
 }
 
-export function DebtPaymentForm({ customerId, customerName }: DebtPaymentFormProps) {
+export function DebtPaymentForm({ customerId, customerName, totalDebt }: DebtPaymentFormProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [amountRaw, setAmountRaw] = useState('')
@@ -29,7 +30,8 @@ export function DebtPaymentForm({ customerId, customerName }: DebtPaymentFormPro
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const amount = amountRaw.trim() ? parseFloat(amountRaw.replace(',', '.')) : NaN
-  const isValid = !Number.isNaN(amount) && amount > 0
+  const exceedsDebt = !Number.isNaN(amount) && amount > totalDebt
+  const isValid = !Number.isNaN(amount) && amount > 0 && !exceedsDebt
 
   async function handleSubmit() {
     if (!isValid) {
@@ -72,7 +74,12 @@ export function DebtPaymentForm({ customerId, customerName }: DebtPaymentFormPro
         <DialogHeader>
           <DialogTitle>Registrar pagamento</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-slate-500 -mt-2">{customerName}</p>
+        <div className="-mt-2 flex items-center justify-between">
+          <p className="text-sm text-slate-500">{customerName}</p>
+          <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+            Débito: R$ {totalDebt.toFixed(2).replace('.', ',')}
+          </span>
+        </div>
 
         <div className="space-y-4 pt-2">
           <div className="space-y-1.5">
@@ -90,10 +97,15 @@ export function DebtPaymentForm({ customerId, customerName }: DebtPaymentFormPro
                 value={amountRaw}
                 onChange={(e) => setAmountRaw(e.target.value.replace(/[^\d,.]/g, ''))}
                 placeholder="0,00"
-                className="pl-9"
+                className={`pl-9 ${exceedsDebt ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                 autoFocus
               />
             </div>
+            {exceedsDebt && (
+              <p className="text-xs text-red-500">
+                Valor maior que o débito (R$ {totalDebt.toFixed(2).replace('.', ',')})
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">

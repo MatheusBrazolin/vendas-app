@@ -89,7 +89,7 @@ export function ReceiptView({ sale, storeName = 'VendasApp' }: ReceiptViewProps)
       </div>
 
       {/* Printable receipt — 80mm preview centered on screen */}
-      <div className="receipt-print-area mx-auto bg-white shadow-sm border border-slate-200 print:shadow-none print:border-0">
+      <div className="receipt-print-area mx-auto w-fit bg-white shadow-2xl rounded-sm print:shadow-none print:rounded-none">
         <ReceiptBody sale={sale} storeName={storeName} />
       </div>
 
@@ -107,78 +107,77 @@ function ReceiptBody({ sale, storeName }: { sale: SaleWithItems; storeName: stri
 
   return (
     <div
-      className="font-mono text-[11px] leading-tight text-black p-3"
+      className="font-mono text-[11px] leading-relaxed text-black p-4"
       style={{ width: '80mm', maxWidth: '100%' }}
     >
       {/* Cabeçalho */}
-      <div className="text-center mb-1">
-        <p className="text-[10px]">{'* * * * * * * * * * * * * * * * * *'}</p>
-        <p className="text-sm font-bold uppercase tracking-widest mt-0.5">{storeName}</p>
-        {isFiado && (
-          <p className="text-[10px] font-semibold tracking-wide mt-0.5">— COMPRA FIADA —</p>
-        )}
-        <p className="text-[10px] mt-0.5">{'* * * * * * * * * * * * * * * * * *'}</p>
+      <div className="text-center mb-2">
+        <p className="text-[9px] tracking-[0.3em] text-gray-400">━━━━━━━━━━━━━━━━━━━━━━</p>
+        <p className="text-base font-bold uppercase tracking-[0.2em] mt-1">{storeName}</p>
+        <p className="text-[9px] text-gray-500 tracking-widest uppercase mt-0.5">
+          {isFiado ? '— Compra Fiada —' : '— Comprovante de Venda —'}
+        </p>
+        <p className="text-[9px] tracking-[0.3em] text-gray-400 mt-1">━━━━━━━━━━━━━━━━━━━━━━</p>
       </div>
 
-      <Separator />
-
       {/* Dados da venda */}
-      <div className="space-y-0.5">
-        <p>
-          <span className="font-semibold">Venda :</span> {shortSaleId(sale.id)}
-        </p>
-        <p>
-          <span className="font-semibold">Data  :</span> {formatDate(sale.created_at)}
-        </p>
-        {isFiado && customerName && (
-          <p>
-            <span className="font-semibold">Cliente:</span> {customerName}
-          </p>
+      <div className="text-[10px] space-y-0.5 mb-2">
+        <div className="flex justify-between">
+          <span className="text-gray-500">Nº Venda</span>
+          <span className="font-semibold">{shortSaleId(sale.id)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-500">Data</span>
+          <span>{formatDate(sale.created_at)}</span>
+        </div>
+        {customerName && (
+          <div className="flex justify-between">
+            <span className="text-gray-500">Cliente</span>
+            <span className="font-semibold text-right max-w-[55%] leading-tight">{customerName}</span>
+          </div>
         )}
       </div>
 
       <Separator />
 
       {/* Itens */}
-      <table className="w-full text-[10px]">
-        <thead>
-          <tr className="border-b border-dashed border-black">
-            <th className="text-left pb-1 font-semibold">ITEM</th>
-            <th className="text-center pb-1 font-semibold">QTD</th>
-            <th className="text-right pb-1 font-semibold">UNIT.</th>
-            <th className="text-right pb-1 font-semibold">TOTAL</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sale.sale_items.map((item) => (
-            <tr key={item.id} className="align-top">
-              <td className="pr-1 py-0.5 break-words">
-                <span className="block font-medium">{item.products.name}</span>
-                <span className="text-[9px] text-slate-400">{item.products.code}</span>
-              </td>
-              <td className="text-center py-0.5">{item.quantity}</td>
-              <td className="text-right py-0.5 whitespace-nowrap">
-                {formatCurrency(item.unit_price)}
-              </td>
-              <td className="text-right py-0.5 whitespace-nowrap font-bold">
-                {formatCurrency(item.subtotal)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="text-[9px] text-gray-500 flex justify-between mb-1 uppercase tracking-wide">
+        <span className="flex-1">Produto</span>
+        <span className="w-6 text-center">Qtd</span>
+        <span className="w-14 text-right">Unit.</span>
+        <span className="w-14 text-right">Total</span>
+      </div>
+
+      <div className="space-y-1.5 mb-1">
+        {sale.sale_items.map((item) => (
+          <div key={item.id} className="flex justify-between items-start gap-1">
+            <div className="flex-1 min-w-0">
+              <p className="font-medium leading-tight break-words">{item.products.name}</p>
+            </div>
+            <span className="w-6 text-center shrink-0">{item.quantity}</span>
+            <span className="w-14 text-right shrink-0 whitespace-nowrap">
+              {formatCurrency(item.unit_price)}
+            </span>
+            <span className="w-14 text-right shrink-0 whitespace-nowrap font-bold">
+              {formatCurrency(item.subtotal)}
+            </span>
+          </div>
+        ))}
+      </div>
 
       <Separator />
 
       {/* Total */}
-      <div className="flex justify-between font-bold text-sm">
-        <span>TOTAL</span>
-        <span>{formatCurrency(sale.total_amount)}</span>
+      <div className="flex justify-between items-baseline mb-1">
+        <span className="font-bold text-sm tracking-wide">TOTAL</span>
+        <span className="font-bold text-lg">{formatCurrency(sale.total_amount)}</span>
       </div>
 
-      <div className="mt-1 text-[10px]">
-        <span className="font-semibold">Pagamento:</span>{' '}
-        <span className="uppercase">{PAYMENT_LABELS[sale.payment_method]}</span>
+      <div className="flex justify-between text-[10px] mb-1">
+        <span className="text-gray-500">Pagamento</span>
+        <span className="font-semibold uppercase tracking-wide">
+          {PAYMENT_LABELS[sale.payment_method]}
+        </span>
       </div>
 
       {/* Observações */}
@@ -186,7 +185,7 @@ function ReceiptBody({ sale, storeName }: { sale: SaleWithItems; storeName: stri
         <>
           <Separator />
           <div className="text-[10px]">
-            <p className="font-semibold">Obs.:</p>
+            <p className="text-gray-500 mb-0.5">Obs.:</p>
             <p className="break-words">{sale.notes}</p>
           </div>
         </>
@@ -196,14 +195,12 @@ function ReceiptBody({ sale, storeName }: { sale: SaleWithItems; storeName: stri
       {isFiado && (
         <>
           <Separator />
-          <div className="text-[10px] space-y-3 pt-1">
-            <p className="font-semibold">Declaro que recebi os itens acima:</p>
-            <div className="mt-4 pt-1 border-t border-black">
-              <p className="text-center text-[9px] mt-0.5">
-                Assinatura do comprador
-              </p>
+          <div className="text-[10px] pt-1">
+            <p className="text-gray-500 mb-6">Declaro que recebi os itens acima:</p>
+            <div className="border-t border-black pt-1 mx-2 text-center">
+              <p className="text-[9px] text-gray-500">Assinatura do comprador</p>
               {customerName && (
-                <p className="text-center text-[9px] mt-0.5">{customerName}</p>
+                <p className="text-[9px] font-medium mt-0.5">{customerName}</p>
               )}
             </div>
           </div>
@@ -212,14 +209,17 @@ function ReceiptBody({ sale, storeName }: { sale: SaleWithItems; storeName: stri
 
       <Separator />
 
-      <p className="text-center text-[10px] mt-0.5">Obrigado pela preferencia!</p>
-      <p className="text-center text-[10px]">{'- - - - - - - - - - - - - - - -'}</p>
+      {/* Rodapé */}
+      <div className="text-center space-y-0.5 pb-1">
+        <p className="text-[10px] font-semibold">Obrigado pela preferência!</p>
+        <p className="text-[9px] text-gray-400 tracking-[0.3em]">━━━━━━━━━━━━━━━━━━━━━━</p>
+      </div>
     </div>
   )
 }
 
 function Separator() {
   return (
-    <div className="my-1.5 border-t border-dashed border-black" aria-hidden="true" />
+    <div className="my-2 border-t border-dashed border-gray-300" aria-hidden="true" />
   )
 }

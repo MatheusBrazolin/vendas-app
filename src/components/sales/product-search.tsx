@@ -293,14 +293,14 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
 
       {/* ── Hints (only in search mode, no results open) ── */}
       {!staged && results.length === 0 && (
-        <div className="px-1 space-y-1 text-[11px] text-slate-400">
+        <div className="px-1 space-y-1 text-[11px] text-slate-400 dark:text-slate-500">
           <p>
-            <ScanBarcode aria-hidden="true" className="inline h-3 w-3 mr-1 -mt-0.5 text-slate-400" />
-            <strong className="text-slate-600">Com código:</strong> bipe → confirme a quantidade → <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px]">Enter</kbd>
+            <ScanBarcode aria-hidden="true" className="inline h-3 w-3 mr-1 -mt-0.5 text-slate-400 dark:text-slate-500" />
+            <strong className="text-slate-600 dark:text-slate-300">Com código:</strong> bipe → confirme a quantidade → <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px] dark:bg-slate-700 dark:text-slate-300">Enter</kbd>
           </p>
           <p>
-            <Search aria-hidden="true" className="inline h-3 w-3 mr-1 -mt-0.5 text-slate-400" />
-            <strong className="text-slate-600">Sem código:</strong> digite → <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px]">↓</kbd> para navegar → <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px]">Enter</kbd> para selecionar
+            <Search aria-hidden="true" className="inline h-3 w-3 mr-1 -mt-0.5 text-slate-400 dark:text-slate-500" />
+            <strong className="text-slate-600 dark:text-slate-300">Sem código:</strong> digite → <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px] dark:bg-slate-700 dark:text-slate-300">↓</kbd> para navegar → <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px] dark:bg-slate-700 dark:text-slate-300">Enter</kbd> para selecionar
           </p>
         </div>
       )}
@@ -362,10 +362,10 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
 
       {/* Navigation hint when dropdown is open */}
       {results.length > 1 && !staged && (
-        <p className="text-[11px] text-slate-400 px-1">
-          <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-500 font-mono text-[10px]">↓ ↑</kbd> navegar ·{' '}
-          <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-500 font-mono text-[10px]">Enter</kbd> selecionar ·{' '}
-          <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-500 font-mono text-[10px]">Esc</kbd> fechar
+        <p className="text-[11px] text-slate-400 dark:text-slate-500 px-1">
+          <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-500 font-mono text-[10px] dark:bg-slate-700 dark:text-slate-300">↓ ↑</kbd> navegar ·{' '}
+          <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-500 font-mono text-[10px] dark:bg-slate-700 dark:text-slate-300">Enter</kbd> selecionar ·{' '}
+          <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-500 font-mono text-[10px] dark:bg-slate-700 dark:text-slate-300">Esc</kbd> fechar
         </p>
       )}
 

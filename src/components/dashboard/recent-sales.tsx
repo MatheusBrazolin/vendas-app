@@ -20,8 +20,8 @@ const PAYMENT_BADGE: Record<PaymentMethod, { badge: string; dot: string }> = {
 
 export function RecentSales({ sales }: RecentSalesProps) {
   return (
-    <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 shadow-sm">
-      <CardHeader className="pb-3">
+    <Card className="flex flex-col h-full border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 shadow-sm">
+      <CardHeader className="pb-3 shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <ShoppingCart className="h-4 w-4 text-slate-500 dark:text-slate-400" />
@@ -40,13 +40,13 @@ export function RecentSales({ sales }: RecentSalesProps) {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 flex-1 flex flex-col min-h-0">
         {sales.length === 0 ? (
           <div className="px-6 py-8 text-center">
             <p className="text-sm text-slate-400">Nenhuma venda registrada ainda.</p>
           </div>
         ) : (
-          <div>
+          <div className="flex-1 overflow-y-auto min-h-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {sales.map((sale, idx) => {
               const style = PAYMENT_BADGE[sale.payment_method as PaymentMethod] ?? PAYMENT_BADGE.cash
               return (

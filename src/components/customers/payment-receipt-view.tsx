@@ -96,16 +96,16 @@ export function PaymentReceiptView({ data, storeName = 'VendasApp' }: PaymentRec
       </div>
 
       {/* ── Receipt ── */}
-      <div className="receipt-print-area max-w-[80mm] mx-auto px-4 pb-8 font-mono text-[11px] leading-snug text-slate-900">
+      <div className="receipt-print-area max-w-[80mm] mx-auto px-4 pb-8 font-mono text-[11px] leading-snug text-slate-900 dark:text-slate-100">
         {/* Header */}
         <div className="text-center py-3 space-y-0.5">
           <p className="text-xs font-bold tracking-widest uppercase">{storeName}</p>
-          <p className="text-[9px] text-slate-500 tracking-wider">* * * * * * * * * * * * *</p>
+          <p className="text-[9px] text-slate-400 dark:text-slate-500 tracking-wider">* * * * * * * * * * * * *</p>
           <p className="font-bold text-sm">COMPROVANTE DE PAGAMENTO</p>
-          <p className="text-[10px] font-semibold text-slate-600 tracking-wide">— FIADO —</p>
+          <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 tracking-wide">— FIADO —</p>
         </div>
 
-        <p className="text-[9px] text-slate-500 tracking-wider text-center mb-3">* * * * * * * * * * * * *</p>
+        <p className="text-[9px] text-slate-400 dark:text-slate-500 tracking-wider text-center mb-3">* * * * * * * * * * * * *</p>
 
         {/* Customer */}
         <div className="space-y-1 mb-3">
@@ -114,41 +114,41 @@ export function PaymentReceiptView({ data, storeName = 'VendasApp' }: PaymentRec
           <p><span className="font-semibold">Data:</span> {formatDateTime(payment.created_at)}</p>
         </div>
 
-        <p className="text-[9px] text-slate-400">- - - - - - - - - - - - - - - - - - -</p>
+        <p className="text-[9px] text-slate-300 dark:text-slate-600">- - - - - - - - - - - - - - - - - - -</p>
 
         {/* Payment amount */}
-        <div className="py-2 text-center">
-          <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Valor pago</p>
-          <p className="text-2xl font-bold">{formatCurrency(payment.amount)}</p>
+        <div className="py-3 text-center">
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Valor pago</p>
+          <p className="text-3xl font-bold">{formatCurrency(payment.amount)}</p>
         </div>
 
-        <p className="text-[9px] text-slate-400">- - - - - - - - - - - - - - - - - - -</p>
+        <p className="text-[9px] text-slate-300 dark:text-slate-600">- - - - - - - - - - - - - - - - - - -</p>
 
         {/* Balance */}
         <div className="py-2 space-y-1">
           {isFullyPaid ? (
-            <p className="text-center font-bold text-[13px]">✓ DÉBITO QUITADO</p>
+            <p className="text-center font-bold text-[14px] text-emerald-600 dark:text-emerald-400">✓ DÉBITO QUITADO</p>
           ) : (
             <div className="flex justify-between items-center">
               <span className="font-semibold">Saldo devedor:</span>
-              <span className="font-bold text-[13px]">{formatCurrency(remainingDebt)}</span>
+              <span className="font-bold text-[13px] text-amber-600 dark:text-amber-400">{formatCurrency(remainingDebt)}</span>
             </div>
           )}
         </div>
 
         {payment.notes && (
           <>
-            <p className="text-[9px] text-slate-400">- - - - - - - - - - - - - - - - - - -</p>
+            <p className="text-[9px] text-slate-300 dark:text-slate-600">- - - - - - - - - - - - - - - - - - -</p>
             <p className="py-1.5"><span className="font-semibold">Obs:</span> {payment.notes}</p>
           </>
         )}
 
-        <p className="text-[9px] text-slate-400 mt-2">- - - - - - - - - - - - - - - - - - -</p>
+        <p className="text-[9px] text-slate-300 dark:text-slate-600 mt-2">- - - - - - - - - - - - - - - - - - -</p>
 
         {/* Footer */}
         <div className="text-center pt-2 pb-1 space-y-1">
-          <p className="text-[9px] text-slate-500">Guarde este comprovante</p>
-          <p className="text-[9px] text-slate-400">{storeName} — obrigado!</p>
+          <p className="text-[9px] text-slate-500 dark:text-slate-400">Guarde este comprovante</p>
+          <p className="text-[9px] text-slate-400 dark:text-slate-500">{storeName} — obrigado!</p>
         </div>
       </div>
     </div>

@@ -47,8 +47,9 @@ export async function LowStockAlert() {
           </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-1">
-        {products.slice(0, 5).map((product) => (
+      <CardContent className="p-0">
+        <div className="overflow-y-auto max-h-48 px-6 pb-4 pt-1 space-y-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {products.map((product) => (
           <div
             key={product.id}
             className="flex items-center justify-between gap-3 rounded-md px-2 py-2 hover:bg-amber-100/40 dark:hover:bg-amber-500/10 transition-colors"
@@ -72,16 +73,7 @@ export async function LowStockAlert() {
             </Button>
           </div>
         ))}
-        {products.length > 5 && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full mt-2 border-amber-300 dark:border-amber-500/30 text-amber-800 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/10 hover:text-amber-900 dark:hover:text-amber-300"
-            asChild
-          >
-            <Link href="/produtos">Ver todos os {products.length} produtos</Link>
-          </Button>
-        )}
+        </div>
       </CardContent>
     </Card>
   )

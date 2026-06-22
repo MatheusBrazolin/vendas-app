@@ -52,7 +52,7 @@ export default async function ClienteDetalhePage({ params }: Props) {
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{customer.phone}</p>
           )}
         </div>
-        <DebtPaymentForm customerId={customer.id} customerName={customer.full_name} />
+        <DebtPaymentForm customerId={customer.id} customerName={customer.full_name} totalDebt={currentDebt} />
       </div>
 
       {/* Resumo do saldo */}

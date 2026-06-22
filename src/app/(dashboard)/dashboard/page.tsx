@@ -50,11 +50,11 @@ export default async function DashboardPage() {
 
       <SalesChart data={chartData} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[480px]">
+        <div className="lg:col-span-2 flex flex-col min-h-0">
           <RecentSales sales={metrics.recentSales} />
         </div>
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4 overflow-y-auto min-h-0">
           <Suspense fallback={<Skeleton className="h-48 w-full" />}>
             <TopProducts />
           </Suspense>
