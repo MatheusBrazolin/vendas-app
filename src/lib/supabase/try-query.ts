@@ -11,7 +11,7 @@
 export async function tryQuery<T>(
   fn: () => Promise<T>,
   fallback: T,
-  timeoutMs = 5000,
+  timeoutMs = 3000,
 ): Promise<{ data: T; offline: boolean }> {
   const attempt = fn()
     .then((data) => ({ data, offline: false as const }))

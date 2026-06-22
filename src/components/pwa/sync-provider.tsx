@@ -115,14 +115,22 @@ export function SyncProvider() {
     run()
 
     const onOnline = () => run(true)
+    const onOffline = () => {
+      wasOfflineRef.current = true
+      // Re-render server pages immediately so they use the SQLite/IndexedDB
+      // cache rather than waiting up to 60s for the next periodic sync cycle.
+      router.refresh()
+    }
     const onVisible = () => {
       if (document.visibilityState === 'visible') run()
     }
     window.addEventListener('online', onOnline)
+    window.addEventListener('offline', onOffline)
     document.addEventListener('visibilitychange', onVisible)
     const interval = window.setInterval(run, PERIODIC_SYNC_MS)
     return () => {
       window.removeEventListener('online', onOnline)
+      window.removeEventListener('offline', onOffline)
       document.removeEventListener('visibilitychange', onVisible)
       window.clearInterval(interval)
     }

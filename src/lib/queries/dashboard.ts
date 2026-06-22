@@ -7,91 +7,84 @@ import { isElectron } from '@/lib/db/client'
 import * as sqliteQueries from '@/lib/db/queries/dashboard'
 
 export async function getDashboardMetrics() {
-  try {
-    const supabase = await createClient()
-    const now = new Date()
-    const today = brDayRangeUTC(todayBRISO())
+  if (isElectron()) return sqliteQueries.getDashboardMetrics()
 
-    const [todaySales, monthSales, allProducts, recentSales] = await Promise.all([
-      supabase
-        .from('sales')
-        .select('total_amount')
-        .gte('created_at', today.start)
-        .lte('created_at', today.end),
+  const supabase = await createClient()
+  const now = new Date()
+  const today = brDayRangeUTC(todayBRISO())
 
-      supabase
-        .from('sales')
-        .select('total_amount')
-        .gte('created_at', startOfMonth(now).toISOString())
-        .lte('created_at', endOfMonth(now).toISOString()),
+  const [todaySales, monthSales, allProducts, recentSales] = await Promise.all([
+    supabase
+      .from('sales')
+      .select('total_amount')
+      .gte('created_at', today.start)
+      .lte('created_at', today.end),
 
-      supabase
-        .from('products')
-        .select('stock_quantity, min_stock')
-        .eq('is_active', true),
+    supabase
+      .from('sales')
+      .select('total_amount')
+      .gte('created_at', startOfMonth(now).toISOString())
+      .lte('created_at', endOfMonth(now).toISOString()),
 
-      supabase
-        .from('sales')
-        .select('id, total_amount, payment_method, created_at')
-        .order('created_at', { ascending: false })
-        .limit(10),
-    ])
+    supabase
+      .from('products')
+      .select('stock_quantity, min_stock')
+      .eq('is_active', true),
 
-    const todayTotal = (todaySales.data ?? []).reduce((s, r) => s + Number(r.total_amount), 0)
-    const monthTotal = (monthSales.data ?? []).reduce((s, r) => s + Number(r.total_amount), 0)
-    const todayCount = todaySales.data?.length ?? 0
-    const monthCount = monthSales.data?.length ?? 0
-    const avgTicket = monthCount > 0 ? monthTotal / monthCount : 0
-    const lowStockCount = (allProducts.data ?? []).filter(
-      (p) => p.stock_quantity <= p.min_stock
-    ).length
+    supabase
+      .from('sales')
+      .select('id, total_amount, payment_method, created_at')
+      .order('created_at', { ascending: false })
+      .limit(10),
+  ])
 
-    return {
-      todayTotal,
-      monthTotal,
-      todayCount,
-      monthCount,
-      avgTicket,
-      lowStockCount,
-      recentSales: (recentSales.data ?? []) as Sale[],
-    }
-  } catch (err) {
-    // Offline fallback: use local SQLite cache (Electron only)
-    if (isElectron()) return sqliteQueries.getDashboardMetrics()
-    throw err
+  const todayTotal = (todaySales.data ?? []).reduce((s, r) => s + Number(r.total_amount), 0)
+  const monthTotal = (monthSales.data ?? []).reduce((s, r) => s + Number(r.total_amount), 0)
+  const todayCount = todaySales.data?.length ?? 0
+  const monthCount = monthSales.data?.length ?? 0
+  const avgTicket = monthCount > 0 ? monthTotal / monthCount : 0
+  const lowStockCount = (allProducts.data ?? []).filter(
+    (p) => p.stock_quantity <= p.min_stock
+  ).length
+
+  return {
+    todayTotal,
+    monthTotal,
+    todayCount,
+    monthCount,
+    avgTicket,
+    lowStockCount,
+    recentSales: (recentSales.data ?? []) as Sale[],
   }
 }
 
 export async function getSalesLast30Days() {
-  try {
-    const supabase = await createClient()
-    const now = new Date()
-    const from = subDays(now, 29)
+  if (isElectron()) return sqliteQueries.getSalesLast30Days()
 
-    const { data, error } = await supabase
-      .from('sales')
-      .select('total_amount, created_at')
-      .gte('created_at', from.toISOString())
-      .order('created_at')
+  const supabase = await createClient()
+  const now = new Date()
+  const from = subDays(now, 29)
 
-    if (error) throw new Error(error.message)
+  const { data, error } = await supabase
+    .from('sales')
+    .select('total_amount, created_at')
+    .gte('created_at', from.toISOString())
+    .order('created_at')
 
-    const byDay: Record<string, number> = {}
-    for (let i = 0; i < 30; i++) {
-      const day = formatBRDayMonth(subDays(now, 29 - i))
-      byDay[day] = 0
-    }
+  if (error) throw new Error(error.message)
 
-    for (const sale of data ?? []) {
-      const day = formatBRDayMonth(sale.created_at)
-      if (byDay[day] !== undefined) {
-        byDay[day] += Number(sale.total_amount)
-      }
-    }
-
-    return Object.entries(byDay).map(([date, total]) => ({ date, total }))
-  } catch (err) {
-    if (isElectron()) return sqliteQueries.getSalesLast30Days()
-    throw err
+  const byDay: Record<string, number> = {}
+  for (let i = 0; i < 30; i++) {
+    const day = formatBRDayMonth(subDays(now, 29 - i))
+    byDay[day] = 0
   }
+
+  for (const sale of data ?? []) {
+    const day = formatBRDayMonth(sale.created_at)
+    if (byDay[day] !== undefined) {
+      byDay[day] += Number(sale.total_amount)
+    }
+  }
+
+  return Object.entries(byDay).map(([date, total]) => ({ date, total }))
 }

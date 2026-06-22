@@ -35,11 +35,27 @@ export interface PrintReceiptData {
  */
 export function printReceipt(data: PrintReceiptData): boolean {
   const win = window.open('', '_blank', 'width=380,height=600')
-  if (!win) return false
+  if (win) {
+    win.document.open()
+    win.document.write(buildReceiptHtml(data))
+    win.document.close()
+    return true
+  }
 
-  win.document.open()
-  win.document.write(buildReceiptHtml(data))
-  win.document.close()
+  // Fallback for Electron (popup windows are blocked by default): load the
+  // receipt HTML into a hidden iframe. The inline <script> in the HTML calls
+  // window.print() on the iframe's own window, which prints just its content.
+  const frame = document.createElement('iframe')
+  frame.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;border:none;'
+  document.body.appendChild(frame)
+  const doc = frame.contentDocument
+  if (!doc) { frame.remove(); return false }
+  doc.open()
+  doc.write(buildReceiptHtml(data))
+  doc.close()
+  // The iframe's afterprint handler calls window.close() which destroys the
+  // frame. The timeout is a safety net in case afterprint never fires.
+  setTimeout(() => frame.remove(), 8_000)
   return true
 }
 

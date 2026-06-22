@@ -76,16 +76,22 @@ export default async function ClienteDetalhePage({ params }: Props) {
         <Card className={
           currentDebt > 0
             ? 'border-red-200 dark:border-red-500/20 dark:bg-slate-800/60 shadow-sm'
-            : 'border-emerald-200 dark:border-emerald-500/20 dark:bg-slate-800/60 shadow-sm'
+            : currentDebt < 0
+              ? 'border-emerald-100 dark:border-emerald-500/20 dark:bg-slate-800/60 shadow-sm'
+              : 'border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 shadow-sm'
         }>
           <CardContent className="pt-5 pb-4">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Saldo devedor</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              {currentDebt < 0 ? 'Crédito do cliente' : 'Saldo devedor'}
+            </p>
             <p className={`text-2xl font-bold tabular-nums mt-1 ${
               currentDebt > 0
                 ? 'text-red-600 dark:text-red-400'
-                : 'text-emerald-600 dark:text-emerald-400'
+                : currentDebt < 0
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : 'text-slate-900 dark:text-slate-100'
             }`}>
-              {formatCurrency(currentDebt)}
+              {formatCurrency(Math.abs(currentDebt))}
             </p>
           </CardContent>
         </Card>

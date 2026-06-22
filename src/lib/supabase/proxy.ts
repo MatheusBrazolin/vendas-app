@@ -70,26 +70,33 @@ export async function updateSession(request: NextRequest) {
 
   let user: { id: string } | null = null
 
-  try {
-    const { data, error } = await supabase.auth.getUser()
-
-    if (data.user) {
-      user = data.user
-    } else {
-      // No Supabase user — fall back to local session cookies.
-      // This covers: network errors, expired tokens, AND fresh offline logins
-      // where no Supabase auth cookie exists (getUser returns null/null).
-      user =
-        getUserFromSessionCookie(request) ??
-        (await getUserFromOfflineCookie(request))
-    }
-  } catch {
-    // AbortError from the timeout, or any unexpected throw
+  // In Electron the Next.js server runs on system Node.js and the Supabase
+  // auth endpoint is unreachable from that process — every getUser() call
+  // hits the 3s timeout. Skip it and use the local session cookie directly.
+  if (process.env.ELECTRON_APP === 'true') {
+    clearTimeout(abortTimer)
     user =
       getUserFromSessionCookie(request) ??
       (await getUserFromOfflineCookie(request))
-  } finally {
-    clearTimeout(abortTimer)
+  } else {
+    try {
+      const { data, error } = await supabase.auth.getUser()
+
+      if (data.user) {
+        user = data.user
+      } else {
+        user =
+          getUserFromSessionCookie(request) ??
+          (await getUserFromOfflineCookie(request))
+      }
+    } catch {
+      // AbortError from the timeout, or any unexpected throw
+      user =
+        getUserFromSessionCookie(request) ??
+        (await getUserFromOfflineCookie(request))
+    } finally {
+      clearTimeout(abortTimer)
+    }
   }
 
   const { pathname } = request.nextUrl

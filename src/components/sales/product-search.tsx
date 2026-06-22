@@ -220,11 +220,11 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
 
       {/* ── Staged product: quantity confirmation ── */}
       {staged && (
-        <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-3 space-y-3 shadow-sm">
+        <div className="rounded-lg border-2 border-primary/60 bg-primary/5 dark:bg-primary/10 p-3 space-y-3 shadow-sm">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900 truncate">{staged.product.name}</p>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{staged.product.name}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Cód: {staged.product.code} · Estoque: {staged.product.stock_quantity} ·{' '}
                 {formatCurrency(staged.product.sale_price)}
               </p>
@@ -232,7 +232,7 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
             <button
               type="button"
               onClick={cancelStaged}
-              className="shrink-0 text-slate-400 hover:text-slate-700 mt-0.5"
+              className="shrink-0 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 mt-0.5"
               aria-label="Cancelar"
             >
               <X className="h-4 w-4" />
@@ -240,14 +240,14 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-slate-600 shrink-0">Quantidade:</span>
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-400 shrink-0">Quantidade:</span>
 
-            <div className="inline-flex items-center rounded-md border border-slate-200 bg-white overflow-hidden">
+            <div className="inline-flex items-center rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 overflow-hidden">
               <button
                 type="button"
                 onClick={() => setStagedQty(staged.quantity - 1)}
                 disabled={staged.quantity <= 1}
-                className="h-9 w-9 inline-flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-40 transition-colors"
+                className="h-9 w-9 inline-flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/8 disabled:opacity-40 transition-colors"
                 aria-label="Diminuir"
               >
                 <Minus className="h-4 w-4" />
@@ -261,14 +261,14 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
                 onChange={(e) => setStagedQty(parseInt(e.target.value, 10) || 1)}
                 onFocus={(e) => e.currentTarget.select()}
                 onKeyDown={handleStagedQtyKeyDown}
-                className="w-14 h-9 text-center text-base font-bold tabular-nums bg-white border-x border-slate-200 focus:outline-none focus:bg-primary/10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-14 h-9 text-center text-base font-bold tabular-nums text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border-x border-slate-200 dark:border-white/10 focus:outline-none focus:bg-primary/10 dark:focus:bg-primary/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 aria-label="Quantidade"
               />
               <button
                 type="button"
                 onClick={() => setStagedQty(staged.quantity + 1)}
                 disabled={staged.quantity >= staged.product.stock_quantity}
-                className="h-9 w-9 inline-flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-40 transition-colors"
+                className="h-9 w-9 inline-flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/8 disabled:opacity-40 transition-colors"
                 aria-label="Aumentar"
               >
                 <Plus className="h-4 w-4" />
@@ -316,7 +316,7 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
         <div
           id="product-results"
           role="listbox"
-          className="border rounded-lg divide-y bg-white shadow-sm max-h-64 overflow-y-auto"
+          className="border border-slate-200 dark:border-white/8 rounded-lg divide-y divide-slate-100 dark:divide-white/5 bg-white dark:bg-slate-800 shadow-sm max-h-64 overflow-y-auto"
         >
           {results.map((product, index) => (
             <button
@@ -328,15 +328,15 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
               aria-selected={index === highlightedIndex}
               className={`w-full text-left flex items-center justify-between gap-3 px-4 py-2.5 transition-colors focus:outline-none ${
                 index === highlightedIndex
-                  ? 'bg-primary/5 border-l-2 border-l-blue-500'
-                  : 'hover:bg-slate-50'
+                  ? 'bg-primary/5 dark:bg-primary/15 border-l-2 border-l-blue-500'
+                  : 'hover:bg-slate-50 dark:hover:bg-white/5'
               }`}
               onClick={() => stageProduct(product)}
               onMouseEnter={() => setHighlightedIndex(index)}
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className={`text-sm font-medium truncate ${index === highlightedIndex ? 'text-primary/80' : ''}`}>
+                  <p className={`text-sm font-medium truncate ${index === highlightedIndex ? 'text-primary/80 dark:text-primary' : 'text-slate-900 dark:text-slate-100'}`}>
                     {product.name}
                   </p>
                   {product.stock_quantity <= 0 && (
@@ -345,14 +345,14 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Cód: {product.code} · Estoque: {product.stock_quantity} ·{' '}
                   {formatCurrency(product.sale_price)}
                 </p>
               </div>
-              <span className="shrink-0 text-[11px] text-slate-400 hidden sm:block">
+              <span className="shrink-0 text-[11px] text-slate-400 dark:text-slate-500 hidden sm:block">
                 {index === highlightedIndex
-                  ? <span className="text-primary/80 font-medium">↵ Enter</span>
+                  ? <span className="text-primary/80 dark:text-primary font-medium">↵ Enter</span>
                   : 'clique ou ↓'}
               </span>
             </button>

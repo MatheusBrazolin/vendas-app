@@ -1,8 +1,8 @@
 import 'server-only'
 import { createClient } from '@/lib/supabase/server'
-import type { CustomerBalance, Customer, DebtPayment, Sale } from '@/types/database'
 import { isElectron } from '@/lib/db/client'
 import * as sqliteQueries from '@/lib/db/queries/customers'
+import type { CustomerBalance, Customer, DebtPayment, Sale } from '@/types/database'
 
 export interface PaymentReceiptData {
   payment: DebtPayment
@@ -17,12 +17,13 @@ export async function getCustomersWithDebt(): Promise<CustomerBalance[]> {
       .from('customer_balances')
       .select('*')
       .order('current_debt', { ascending: false })
-
     if (error) throw error
     return data as CustomerBalance[]
-  } catch (err) {
+  } catch {
+    // Offline or timeout — serve SQLite cache in Electron so debt cards
+    // remain visible without a connection.
     if (isElectron()) return sqliteQueries.getCustomersWithDebt()
-    throw err
+    throw new Error('Supabase unreachable')
   }
 }
 
@@ -59,7 +60,10 @@ export async function getCustomerDetails(id: string): Promise<CustomerDetails | 
         .single(),
     ])
 
-    if (customerRes.error || !customerRes.data) return null
+    if (customerRes.error || !customerRes.data) {
+      if (isElectron()) return sqliteQueries.getCustomerDetails(id)
+      return null
+    }
 
     const fiadoSales = (salesRes.data ?? []) as CustomerDetails['fiadoSales']
     const debtPayments = (paymentsRes.data ?? []) as DebtPayment[]
@@ -86,25 +90,22 @@ export async function getPaymentReceipt(
   customerId: string,
   paymentId: string,
 ): Promise<PaymentReceiptData | null> {
-  try {
-    const supabase = await createClient()
+  // Always use Supabase: the payment was just created online via RPC and
+  // won't be in the local SQLite cache until the next sync cycle.
+  const supabase = await createClient()
 
-    const [paymentRes, customerRes, balanceRes] = await Promise.all([
-      supabase.from('debt_payments').select('*').eq('id', paymentId).eq('customer_id', customerId).single(),
-      supabase.from('customers').select('*').eq('id', customerId).single(),
-      supabase.from('customer_balances').select('current_debt').eq('id', customerId).single(),
-    ])
+  const [paymentRes, customerRes, balanceRes] = await Promise.all([
+    supabase.from('debt_payments').select('*').eq('id', paymentId).eq('customer_id', customerId).single(),
+    supabase.from('customers').select('*').eq('id', customerId).single(),
+    supabase.from('customer_balances').select('current_debt').eq('id', customerId).single(),
+  ])
 
-    if (paymentRes.error || !paymentRes.data) return null
-    if (customerRes.error || !customerRes.data) return null
+  if (paymentRes.error || !paymentRes.data) return null
+  if (customerRes.error || !customerRes.data) return null
 
-    return {
-      payment: paymentRes.data as DebtPayment,
-      customer: customerRes.data as Customer,
-      remainingDebt: balanceRes.data?.current_debt ?? 0,
-    }
-  } catch {
-    if (isElectron()) return sqliteQueries.getPaymentReceipt(customerId, paymentId)
-    return null
+  return {
+    payment: paymentRes.data as DebtPayment,
+    customer: customerRes.data as Customer,
+    remainingDebt: balanceRes.data?.current_debt ?? 0,
   }
 }

@@ -26,95 +26,86 @@ const DEFAULT_PAGE_SIZE = 25
 export async function getSalesPaged(
   params: SalesListParams = {},
 ): Promise<SalesListResult> {
-  try {
-    const supabase = await createClient()
-    const page = Math.max(1, params.page ?? 1)
-    const pageSize = Math.max(1, Math.min(100, params.pageSize ?? DEFAULT_PAGE_SIZE))
+  if (isElectron()) return sqliteQueries.getSalesPaged(params)
 
-    let query = supabase
-      .from('sales')
-      .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false })
+  const supabase = await createClient()
+  const page = Math.max(1, params.page ?? 1)
+  const pageSize = Math.max(1, Math.min(100, params.pageSize ?? DEFAULT_PAGE_SIZE))
 
-    if (params.payment) {
-      query = query.eq('payment_method', params.payment)
-    }
+  let query = supabase
+    .from('sales')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
 
-    if (params.day) {
-      const { start, end } = brDayRangeUTC(params.day)
-      query = query.gte('created_at', start).lte('created_at', end)
-    }
+  if (params.payment) {
+    query = query.eq('payment_method', params.payment)
+  }
 
-    const from = (page - 1) * pageSize
-    const to = from + pageSize - 1
-    query = query.range(from, to)
+  if (params.day) {
+    const { start, end } = brDayRangeUTC(params.day)
+    query = query.gte('created_at', start).lte('created_at', end)
+  }
 
-    const { data, error, count } = await query
-    if (error) throw new Error(error.message)
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+  query = query.range(from, to)
 
-    const total = count ?? 0
-    const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const { data, error, count } = await query
+  if (error) throw new Error(error.message)
 
-    return {
-      items: (data ?? []) as Sale[],
-      total,
-      page,
-      pageSize,
-      totalPages,
-    }
-  } catch (err) {
-    if (isElectron()) return sqliteQueries.getSalesPaged(params)
-    throw err
+  const total = count ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+
+  return {
+    items: (data ?? []) as Sale[],
+    total,
+    page,
+    pageSize,
+    totalPages,
   }
 }
 
 export async function getSaleById(id: string): Promise<SaleWithItems | null> {
-  try {
-    const supabase = await createClient()
-    const { data, error } = await supabase
-      .from('sales')
-      .select('*, sale_items(*, products(*)), customers(full_name)')
-      .eq('id', id)
-      .single()
+  if (isElectron()) return sqliteQueries.getSaleById(id)
 
-    if (error) return null
-    return data as SaleWithItems
-  } catch {
-    if (isElectron()) return sqliteQueries.getSaleById(id)
-    return null
-  }
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('sales')
+    .select('*, sale_items(*, products(*)), customers(full_name)')
+    .eq('id', id)
+    .single()
+
+  if (error) return null
+  return data as SaleWithItems
 }
 
 export async function getTopProducts(limit = 5) {
-  try {
-    const supabase = await createClient()
-    const { data, error } = await supabase
-      .from('sale_items')
-      .select('product_id, quantity, products(name, code)')
-      .limit(500)
+  if (isElectron()) return sqliteQueries.getTopProducts(limit)
 
-    if (error) throw new Error(error.message)
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('sale_items')
+    .select('product_id, quantity, products(name, code)')
+    .limit(500)
 
-    const totals: Record<string, { name: string; code: string; total: number }> = {}
+  if (error) throw new Error(error.message)
 
-    for (const item of data ?? []) {
-      const pid = item.product_id
-      if (!totals[pid]) {
-        totals[pid] = {
-          name: (item.products as { name: string; code: string })?.name ?? '',
-          code: (item.products as { name: string; code: string })?.code ?? '',
-          total: 0,
-        }
+  const totals: Record<string, { name: string; code: string; total: number }> = {}
+
+  for (const item of data ?? []) {
+    const pid = item.product_id
+    if (!totals[pid]) {
+      totals[pid] = {
+        name: (item.products as { name: string; code: string })?.name ?? '',
+        code: (item.products as { name: string; code: string })?.code ?? '',
+        total: 0,
       }
-      totals[pid].total += item.quantity
     }
-
-    return Object.entries(totals)
-      .map(([id, v]) => ({ id, ...v }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, limit)
-  } catch (err) {
-    if (isElectron()) return sqliteQueries.getTopProducts(limit)
-    throw err
+    totals[pid].total += item.quantity
   }
+
+  return Object.entries(totals)
+    .map(([id, v]) => ({ id, ...v }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, limit)
 }

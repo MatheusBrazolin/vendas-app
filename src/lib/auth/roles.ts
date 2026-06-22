@@ -67,12 +67,19 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   )
 
   let user: Awaited<ReturnType<typeof supabaseWithTimeout.auth.getUser>>['data']['user'] = null
-  try {
-    const { data } = await supabaseWithTimeout.auth.getUser()
-    user = data.user
-  } catch {
-    // AbortError (timeout) or network failure — fall through to offline cookie
-  } finally {
+
+  // In Electron the auth endpoint is unreachable from the Node.js process —
+  // skip getUser() entirely and resolve the session from the local cookie.
+  if (process.env.ELECTRON_APP !== 'true') {
+    try {
+      const { data } = await supabaseWithTimeout.auth.getUser()
+      user = data.user
+    } catch {
+      // AbortError (timeout) or network failure — fall through to offline cookie
+    } finally {
+      clearTimeout(abortTimer)
+    }
+  } else {
     clearTimeout(abortTimer)
   }
 

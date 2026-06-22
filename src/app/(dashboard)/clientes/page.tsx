@@ -4,7 +4,6 @@ import { differenceInCalendarDays } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { getCustomersWithDebt } from '@/lib/queries/customers'
 import { formatCurrency } from '@/lib/utils/format'
-import { tryQuery } from '@/lib/supabase/try-query'
 import { OfflineBanner } from '@/components/offline/offline-banner'
 import type { CustomerBalance } from '@/types/database'
 
@@ -52,7 +51,13 @@ function DebtBadge({ customer }: { customer: CustomerBalance }) {
 }
 
 export default async function ClientesPage() {
-  const { data: customers, offline } = await tryQuery(() => getCustomersWithDebt(), [] as CustomerBalance[])
+  let customers: CustomerBalance[] = []
+  let offline = false
+  try {
+    customers = await getCustomersWithDebt()
+  } catch {
+    offline = true
+  }
 
   return (
     <div className="space-y-6">

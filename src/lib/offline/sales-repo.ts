@@ -126,6 +126,7 @@ export async function flushPendingSales(): Promise<{ synced: number; failed: num
         items: sale.items.map((i) => ({
           product_id: i.product_id,
           quantity: i.quantity,
+          unit_price: i.unit_price,
         })),
         client_uuid: sale.id,
         customer_id: sale.customer_id ?? null,

@@ -204,10 +204,6 @@ export function PDV() {
       toast.error('Selecione um cliente para a venda fiada')
       return
     }
-    if (paymentMethod === 'fiado' && typeof navigator !== 'undefined' && !navigator.onLine) {
-      toast.error('Vendas fiadas precisam de conexão com a internet')
-      return
-    }
 
     setIsSubmitting(true)
 
