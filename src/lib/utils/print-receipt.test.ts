@@ -34,8 +34,24 @@ function stubPrintWindow() {
 }
 
 describe('printReceipt', () => {
-  it('returns false when the print window is blocked', () => {
+  it('uses iframe fallback and returns true when the popup window is blocked', () => {
+    // Electron blocks window.open — the function falls back to a hidden iframe.
+    // jsdom provides a real contentDocument on iframes, so the fallback succeeds.
     vi.spyOn(window, 'open').mockReturnValue(null)
+    expect(printReceipt(baseData)).toBe(true)
+  })
+
+  it('returns false when both popup and iframe fallback fail', () => {
+    vi.spyOn(window, 'open').mockReturnValue(null)
+    const original = document.createElement.bind(document)
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      if (tag === 'iframe') {
+        const frame = original('iframe')
+        Object.defineProperty(frame, 'contentDocument', { value: null, configurable: true })
+        return frame
+      }
+      return original(tag)
+    })
     expect(printReceipt(baseData)).toBe(false)
   })
 
