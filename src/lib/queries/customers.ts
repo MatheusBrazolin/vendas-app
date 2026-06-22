@@ -1,7 +1,6 @@
 import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { isElectron } from '@/lib/db/client'
-import * as sqliteQueries from '@/lib/db/queries/customers'
 import type { CustomerBalance, Customer, DebtPayment, Sale } from '@/types/database'
 
 export interface PaymentReceiptData {
@@ -20,9 +19,10 @@ export async function getCustomersWithDebt(): Promise<CustomerBalance[]> {
     if (error) throw error
     return data as CustomerBalance[]
   } catch {
-    // Offline or timeout — serve SQLite cache in Electron so debt cards
-    // remain visible without a connection.
-    if (isElectron()) return sqliteQueries.getCustomersWithDebt()
+    if (isElectron()) {
+      const { getCustomersWithDebt: sqliteGet } = await import('@/lib/db/queries/customers')
+      return sqliteGet()
+    }
     throw new Error('Supabase unreachable')
   }
 }
@@ -61,7 +61,10 @@ export async function getCustomerDetails(id: string): Promise<CustomerDetails | 
     ])
 
     if (customerRes.error || !customerRes.data) {
-      if (isElectron()) return sqliteQueries.getCustomerDetails(id)
+      if (isElectron()) {
+        const { getCustomerDetails: sqliteGet } = await import('@/lib/db/queries/customers')
+        return sqliteGet(id)
+      }
       return null
     }
 
@@ -81,7 +84,10 @@ export async function getCustomerDetails(id: string): Promise<CustomerDetails | 
       currentDebt,
     }
   } catch {
-    if (isElectron()) return sqliteQueries.getCustomerDetails(id)
+    if (isElectron()) {
+      const { getCustomerDetails: sqliteGet } = await import('@/lib/db/queries/customers')
+      return sqliteGet(id)
+    }
     return null
   }
 }

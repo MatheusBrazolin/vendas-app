@@ -44,14 +44,16 @@ describe('printReceipt', () => {
   it('returns false when both popup and iframe fallback fail', () => {
     vi.spyOn(window, 'open').mockReturnValue(null)
     const original = document.createElement.bind(document)
-    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
-      if (tag === 'iframe') {
-        const frame = original('iframe')
-        Object.defineProperty(frame, 'contentDocument', { value: null, configurable: true })
-        return frame
-      }
-      return original(tag)
-    })
+    vi.spyOn(document, 'createElement').mockImplementation(
+      ((tag: string) => {
+        if (tag === 'iframe') {
+          const frame = original('iframe')
+          Object.defineProperty(frame, 'contentDocument', { value: null, configurable: true })
+          return frame
+        }
+        return original(tag)
+      }) as unknown as typeof document.createElement,
+    )
     expect(printReceipt(baseData)).toBe(false)
   })
 
