@@ -4,7 +4,6 @@ import { signOut } from '@/app/(auth)/login/actions'
 import { Button } from '@/components/ui/button'
 import { Breadcrumb } from '@/components/layout/breadcrumb'
 import { MobileSidebar } from '@/components/layout/sidebar'
-import { InstallButton } from '@/components/pwa/install-button'
 import { PendingSalesBadge } from '@/components/pwa/pending-sales-badge'
 
 export async function Header() {
@@ -22,7 +21,6 @@ export async function Header() {
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <PendingSalesBadge />
-        <InstallButton />
 
         <div className="hidden sm:flex items-center gap-3 pr-3 border-r border-slate-200 dark:border-slate-700">
           <div className="text-right leading-tight">
