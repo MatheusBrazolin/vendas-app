@@ -7,7 +7,7 @@
 **PDV e gestão de vendas para pequenos comércios — offline-first, PWA + app Windows.**
 
 [![CI](https://github.com/MatheusBrazolin/vendas-app/actions/workflows/ci.yml/badge.svg)](https://github.com/MatheusBrazolin/vendas-app/actions/workflows/ci.yml)
-[![Live demo](https://img.shields.io/badge/demo-vendas--app--topaz.vercel.app-6d28d9?style=flat-square)](https://vendas-app-topaz.vercel.app)
+[![Live demo](https://img.shields.io/badge/demo-nexsales.vercel.app-6d28d9?style=flat-square)](https://nexsales.vercel.app)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Auth-3ecf8e?style=flat-square&logo=supabase)](https://supabase.com/)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
@@ -171,7 +171,7 @@ No painel do Supabase, abra o **SQL Editor** e execute os arquivos em `supabase/
 
 ## 🌐 Deploy
 
-O app está em produção em **[vendas-app-topaz.vercel.app](https://vendas-app-topaz.vercel.app)**. As funções serverless rodam em `gru1` (São Paulo) para manter latência baixa junto ao Supabase em `sa-east-1`.
+O app está em produção em **[nexsales.vercel.app](https://nexsales.vercel.app)**. As funções serverless rodam em `gru1` (São Paulo) para manter latência baixa junto ao Supabase em `sa-east-1`.
 
 Para subir sua própria instância:
 
