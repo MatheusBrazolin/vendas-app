@@ -2,7 +2,6 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import type { Category, ProductWithCategory } from '@/types/database'
 import { isElectron } from '@/lib/db/client'
-import * as sqliteQueries from '@/lib/db/queries/products'
 
 export type StockFilter = 'all' | 'ok' | 'low' | 'out'
 
@@ -31,7 +30,10 @@ export async function getProductsPaged(
   // instant, and immune to the tryQuery race condition where a hanging Supabase
   // TCP connection causes the 5-second fallback timer to fire before this
   // catch-block can return SQLite data.
-  if (isElectron()) return sqliteQueries.getProductsPaged(params)
+  if (isElectron()) {
+    const { getProductsPaged: sqliteGet } = await import('@/lib/db/queries/products')
+    return sqliteGet(params)
+  }
 
   const supabase = await createClient()
   const page = Math.max(1, params.page ?? 1)
@@ -77,7 +79,10 @@ export async function getProductsPaged(
 }
 
 export async function getLowStock(): Promise<ProductWithCategory[]> {
-  if (isElectron()) return sqliteQueries.getLowStock()
+  if (isElectron()) {
+    const { getLowStock: sqliteGet } = await import('@/lib/db/queries/products')
+    return sqliteGet()
+  }
 
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -95,7 +100,10 @@ export async function getLowStock(): Promise<ProductWithCategory[]> {
 }
 
 export async function getCategories(): Promise<Category[]> {
-  if (isElectron()) return sqliteQueries.getCategories()
+  if (isElectron()) {
+    const { getCategories: sqliteGet } = await import('@/lib/db/queries/products')
+    return sqliteGet()
+  }
 
   const supabase = await createClient()
   const { data, error } = await supabase
