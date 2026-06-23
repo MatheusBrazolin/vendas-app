@@ -63,11 +63,6 @@ export async function queueSale(input: QueueSaleInput): Promise<void> {
   }
 }
 
-/** All queued sales, oldest first. */
-export async function getPendingSales(): Promise<PendingSale[]> {
-  return getDB().pendingSales.orderBy('createdAt').toArray()
-}
-
 /** Counts split by status, for the header badge. */
 export async function getPendingCount(): Promise<{ pending: number; failed: number }> {
   const all = await getDB().pendingSales.toArray()

@@ -31,7 +31,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Dashboard</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Dashboard</h1>
         <p className="text-slate-500 dark:text-slate-400 text-sm">Visão geral do seu negócio</p>
       </div>
 
@@ -50,7 +50,7 @@ export default async function DashboardPage() {
 
       <SalesChart data={chartData} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[480px]">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[480px]">
         <div className="lg:col-span-2 flex flex-col min-h-0">
           <RecentSales sales={metrics.recentSales} />
         </div>

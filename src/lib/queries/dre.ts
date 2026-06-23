@@ -28,7 +28,7 @@ export const PERIOD_LABELS: Record<DREPeriod, string> = {
   'last-90': 'Últimos 90 dias',
 }
 
-export function periodRange(period: DREPeriod): { start: string; end: string } {
+function periodRange(period: DREPeriod): { start: string; end: string } {
   const now = new Date()
   switch (period) {
     case 'this-month':

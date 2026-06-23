@@ -135,7 +135,7 @@ export function Cart({ items, onUpdateQty, onUpdatePrice, onRemove }: CartProps)
               <Button
                 variant="outline"
                 size="icon"
-                className="h-9 w-9"
+                className="h-10 w-10 sm:h-9 sm:w-9"
                 onClick={() => onUpdateQty(item.product.id, item.quantity - 1)}
                 disabled={item.quantity <= 1}
               >
@@ -147,7 +147,7 @@ export function Cart({ items, onUpdateQty, onUpdatePrice, onRemove }: CartProps)
               <Button
                 variant="outline"
                 size="icon"
-                className="h-9 w-9"
+                className="h-10 w-10 sm:h-9 sm:w-9"
                 onClick={() => onUpdateQty(item.product.id, item.quantity + 1)}
                 disabled={item.quantity >= item.product.stock_quantity}
               >
@@ -158,7 +158,7 @@ export function Cart({ items, onUpdateQty, onUpdatePrice, onRemove }: CartProps)
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 text-red-400 hover:text-red-600 hover:bg-red-50 shrink-0"
+              className="h-10 w-10 sm:h-9 sm:w-9 text-red-400 hover:text-red-600 hover:bg-red-50 shrink-0"
               onClick={() => onRemove(item.product.id)}
             >
               <Trash2 className="h-4 w-4" />

@@ -316,7 +316,7 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
         <div
           id="product-results"
           role="listbox"
-          className="border border-slate-200 dark:border-white/8 rounded-lg divide-y divide-slate-100 dark:divide-white/5 bg-white dark:bg-slate-800 shadow-sm max-h-64 overflow-y-auto"
+          className="border border-slate-200 dark:border-white/8 rounded-lg divide-y divide-slate-100 dark:divide-white/5 bg-white dark:bg-slate-800 shadow-sm max-h-48 sm:max-h-64 overflow-y-auto"
         >
           {results.map((product, index) => (
             <button

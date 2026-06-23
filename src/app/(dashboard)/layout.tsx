@@ -19,7 +19,7 @@ export default async function DashboardLayout({
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 relative">
       {/* Gradient blobs — give glassmorphism cards something to blur against */}
       <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden" aria-hidden>
-        <div className="absolute top-28 left-[22%] h-[560px] w-[560px] rounded-full blur-[140px] bg-primary/8 dark:bg-primary/20" />
+        <div className="absolute top-28 left-[22%] h-[280px] w-[280px] sm:h-[560px] sm:w-[560px] rounded-full blur-[140px] bg-primary/8 dark:bg-primary/20" />
         <div className="absolute bottom-20 right-[18%] h-96 w-96 rounded-full blur-[110px] bg-emerald-500/6 dark:bg-emerald-500/15" />
         <div className="absolute top-[50%] right-[38%] h-72 w-72 rounded-full blur-[90px] bg-cyan-500/5 dark:bg-cyan-500/12" />
       </div>

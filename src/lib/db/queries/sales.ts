@@ -160,7 +160,3 @@ export function getTopProducts(limit = 5) {
 
   return rows.map((r) => ({ id: r.product_id, name: r.name, code: r.code, total: r.total }))
 }
-
-// Re-export type so the routing wrapper can import it from one place
-export type { SalesListParams, SalesListResult }
-export type { PaymentMethod }
