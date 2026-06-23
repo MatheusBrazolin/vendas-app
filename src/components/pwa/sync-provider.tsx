@@ -28,7 +28,10 @@ import { getOfflineSessionExpiry } from '@/lib/auth/session-status'
  * All failures are swallowed — sync is best-effort and the app must keep
  * working when it can't talk to Supabase.
  */
-const PERIODIC_SYNC_MS = 60_000
+// Electron keeps a window open for hours — sync every minute.
+// On mobile/web browsers, 5 minutes is enough and saves battery.
+const isElectron = typeof navigator !== 'undefined' && navigator.userAgent.includes('Electron')
+const PERIODIC_SYNC_MS = isElectron ? 60_000 : 300_000
 
 /**
  * Calls the server-side SQLite sync endpoint (Electron only).
@@ -56,6 +59,8 @@ export function SyncProvider() {
   )
   // Prevents showing the session-expiry toast more than once per offline period.
   const sessionWarningShownRef = useRef(false)
+  // Throttle visibilitychange sync — don't re-sync if we ran less than 2 min ago.
+  const lastSyncAtRef = useRef(0)
 
   useEffect(() => {
     const warnIfSessionExpiringSoon = async () => {
@@ -139,6 +144,8 @@ export function SyncProvider() {
 
     run()
 
+    lastSyncAtRef.current = Date.now()
+
     const onOnline = () => run(true)
     const onOffline = () => {
       wasOfflineRef.current = true
@@ -147,7 +154,11 @@ export function SyncProvider() {
       router.refresh()
     }
     const onVisible = () => {
-      if (document.visibilityState === 'visible') run()
+      if (document.visibilityState !== 'visible') return
+      const now = Date.now()
+      if (now - lastSyncAtRef.current < 120_000) return
+      lastSyncAtRef.current = now
+      run()
     }
     window.addEventListener('online', onOnline)
     window.addEventListener('offline', onOffline)
