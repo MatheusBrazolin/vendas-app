@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112.64" fill="#2563eb"/>
+  <rect width="512" height="512" rx="112.64" fill="#7c3aed"/>
   
     <g transform="translate(128, 128) scale(10.666666666666666)"
        fill="none" stroke="white" stroke-width="1.8"

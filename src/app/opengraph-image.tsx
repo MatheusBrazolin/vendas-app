@@ -25,7 +25,7 @@ export default function OgImage() {
             position: 'absolute',
             inset: 0,
             backgroundImage:
-              'linear-gradient(rgba(59,130,246,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.06) 1px, transparent 1px)',
+              'linear-gradient(rgba(124,58,237,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,0.06) 1px, transparent 1px)',
             backgroundSize: '60px 60px',
           }}
         />
@@ -38,7 +38,7 @@ export default function OgImage() {
             left: '-80px',
             width: '500px',
             height: '500px',
-            background: 'radial-gradient(circle, rgba(59,130,246,0.25) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(124,58,237,0.25) 0%, transparent 70%)',
             borderRadius: '50%',
           }}
         />
@@ -51,7 +51,7 @@ export default function OgImage() {
             right: '-60px',
             width: '400px',
             height: '400px',
-            background: 'radial-gradient(circle, rgba(99,102,241,0.2) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(139,92,246,0.2) 0%, transparent 70%)',
             borderRadius: '50%',
           }}
         />
@@ -74,7 +74,7 @@ export default function OgImage() {
                 width: '52px',
                 height: '52px',
                 borderRadius: '14px',
-                background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
+                background: 'linear-gradient(135deg, #7c3aed, #8b5cf6)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -110,7 +110,7 @@ export default function OgImage() {
                 style={{
                   width: '48px',
                   height: '4px',
-                  background: 'linear-gradient(90deg, #3b82f6, #6366f1)',
+                  background: 'linear-gradient(90deg, #7c3aed, #8b5cf6)',
                   borderRadius: '2px',
                 }}
               />
@@ -132,7 +132,7 @@ export default function OgImage() {
               Gestão de vendas{' '}
               <span
                 style={{
-                  background: 'linear-gradient(90deg, #3b82f6, #818cf8)',
+                  background: 'linear-gradient(90deg, #7c3aed, #a78bfa)',
                   WebkitBackgroundClip: 'text',
                   color: 'transparent',
                 }}
@@ -162,9 +162,9 @@ export default function OgImage() {
                 style={{
                   padding: '8px 20px',
                   borderRadius: '999px',
-                  background: 'rgba(59,130,246,0.12)',
-                  border: '1px solid rgba(59,130,246,0.3)',
-                  color: '#93c5fd',
+                  background: 'rgba(124,58,237,0.12)',
+                  border: '1px solid rgba(124,58,237,0.3)',
+                  color: '#c4b5fd',
                   fontSize: '15px',
                   fontWeight: 500,
                 }}

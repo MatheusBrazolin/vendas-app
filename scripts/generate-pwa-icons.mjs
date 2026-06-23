@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const publicDir = join(__dirname, '..', 'public')
 
-const BRAND_BLUE = '#2563eb'
+const BRAND_COLOR = '#7c3aed'
 
 /**
  * The "any-purpose" icon: rounded blue square with a stylized shopping bag.
@@ -42,7 +42,7 @@ function iconSvg({ size, padding, rounded }) {
   const rx = rounded ? size * 0.22 : 0
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <rect width="${size}" height="${size}" rx="${rx}" fill="${BRAND_BLUE}"/>
+  <rect width="${size}" height="${size}" rx="${rx}" fill="${BRAND_COLOR}"/>
   ${bagPath}
 </svg>`
 }
