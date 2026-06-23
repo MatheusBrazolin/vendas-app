@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { syncAll } from '@/lib/offline/sync'
 import { flushPendingSales } from '@/lib/offline/sales-repo'
+import { getOfflineSessionExpiry } from '@/lib/auth/session-status'
 
 /**
  * Background sync orchestrator. Mounted once in the dashboard layout — only
@@ -53,16 +54,40 @@ export function SyncProvider() {
   const wasOfflineRef = useRef(
     typeof navigator !== 'undefined' ? !navigator.onLine : false,
   )
+  // Prevents showing the session-expiry toast more than once per offline period.
+  const sessionWarningShownRef = useRef(false)
 
   useEffect(() => {
+    const warnIfSessionExpiringSoon = async () => {
+      if (sessionWarningShownRef.current) return
+      try {
+        const exp = await getOfflineSessionExpiry()
+        if (!exp) return
+        const remainingSecs = exp - Math.floor(Date.now() / 1000)
+        if (remainingSecs <= 0) return // readOfflineSession already returns null; redirect handles it
+        const remainingMins = Math.floor(remainingSecs / 60)
+        if (remainingMins <= 60) {
+          sessionWarningShownRef.current = true
+          toast.warning(
+            `Sessão offline expira em ${remainingMins} min — conecte-se para renovar o acesso.`,
+            { duration: 12_000 },
+          )
+        }
+      } catch {
+        // Non-critical: never let this interfere with sync
+      }
+    }
+
     const run = async (triggeredByOnlineEvent = false) => {
       if (typeof navigator !== 'undefined' && !navigator.onLine) {
         wasOfflineRef.current = true
+        await warnIfSessionExpiringSoon()
         return
       }
 
       const comingBackOnline = wasOfflineRef.current || triggeredByOnlineEvent
       wasOfflineRef.current = false
+      sessionWarningShownRef.current = false
 
       // When coming back online, wait 1s for the network to stabilise before
       // hitting Supabase — avoids a race where the OS reports "online" but DNS

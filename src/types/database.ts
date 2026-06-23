@@ -297,6 +297,7 @@ export interface Database {
           description: string | null
           created_at: string
           updated_at: string
+          last_accessed_at: string
         }
         Insert: {
           code: string
@@ -305,6 +306,7 @@ export interface Database {
           description?: string | null
           created_at?: string
           updated_at?: string
+          last_accessed_at?: string
         }
         Update: {
           code?: string
@@ -313,6 +315,7 @@ export interface Database {
           description?: string | null
           created_at?: string
           updated_at?: string
+          last_accessed_at?: string
         }
         Relationships: []
       }
@@ -395,6 +398,10 @@ export interface Database {
           p_sale_id: string
         }
         Returns: null
+      }
+      cleanup_barcode_cache: {
+        Args: Record<string, never>
+        Returns: number
       }
     }
   }

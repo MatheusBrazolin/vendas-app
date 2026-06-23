@@ -63,12 +63,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       text: email.text,
     })
 
+    // Housekeeping: evict stale barcode cache entries. Best-effort — never fail the cron.
+    const cleanupResult = await service.rpc('cleanup_barcode_cache').then(
+      (r) => r.data,
+      () => null,
+    )
+
     return NextResponse.json({
       ok: true,
       date: day,
       sales: summary.count,
       total: summary.total,
       sentTo: recipients.length,
+      barcodeCacheCleaned: cleanupResult ?? 0,
     })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Erro inesperado.'

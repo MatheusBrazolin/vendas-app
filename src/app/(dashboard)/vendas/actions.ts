@@ -75,7 +75,10 @@ export async function createSale(input: CreateSaleInput): Promise<CreateSaleResu
     return { error: error.message, code: 'unknown' }
   }
 
-  const saleId = data as string
+  if (typeof data !== 'string' || !data) {
+    return { error: 'Erro interno: resposta inesperada do servidor.', code: 'unknown' }
+  }
+  const saleId = data
 
   // In Electron, pages read from SQLite — pull the new sale into SQLite immediately
   // so Histórico and Dashboard reflect the sale without waiting for the next periodic sync.
