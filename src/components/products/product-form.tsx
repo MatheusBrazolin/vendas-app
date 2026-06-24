@@ -80,7 +80,7 @@ function CurrencyInput({ id, value, onChange, placeholder = '0,00', hasError, di
       autoComplete="off"
       disabled={disabled}
       aria-invalid={hasError}
-      className="h-10 border-slate-200"
+      className="h-10 border-slate-200 dark:border-white/10"
     />
   )
 }
@@ -237,9 +237,9 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
   }
 
   return (
-    <Card className="max-w-2xl border-slate-200/80 shadow-sm">
-      <CardHeader className="bg-slate-50/60 border-b border-slate-100 pb-3">
-        <CardTitle className="text-sm font-semibold text-slate-900">
+    <Card className="max-w-2xl border-slate-200/80 dark:border-white/8 shadow-sm">
+      <CardHeader className="bg-slate-50/60 dark:bg-slate-800/60 border-b border-slate-100 dark:border-white/8 pb-3">
+        <CardTitle className="text-sm font-semibold text-slate-900 dark:text-slate-100">
           {product ? 'Dados do produto' : 'Informações do produto'}
         </CardTitle>
       </CardHeader>
@@ -247,8 +247,8 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="code" className="text-xs font-medium text-slate-700 flex items-center gap-1.5">
-                <ScanBarcode className="h-3.5 w-3.5 text-slate-500" />
+              <Label htmlFor="code" className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <ScanBarcode className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                 Código <span className="text-red-500">*</span>
               </Label>
               <div className="relative">
@@ -259,7 +259,7 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
                   spellCheck={false}
                   required
                   aria-invalid={!!errors.code}
-                  className="h-10 border-slate-200 pr-9"
+                  className="h-10 border-slate-200 dark:border-white/10 pr-9"
                   {...codeRegister}
                   ref={(el) => {
                     codeRegister.ref(el)
@@ -275,11 +275,11 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
                 {isLookingUp ? (
                   <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/80 animate-spin" />
                 ) : (
-                  <ScanBarcode className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 pointer-events-none" />
+                  <ScanBarcode className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 dark:text-slate-600 pointer-events-none" />
                 )}
               </div>
               {isNew && (
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-400 dark:text-slate-500">
                   Ao escanear ou pressionar Enter, buscamos nome e descrição automaticamente.
                 </p>
               )}
@@ -289,7 +289,7 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="name" className="text-xs font-medium text-slate-700">
+              <Label htmlFor="name" className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Nome <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -297,7 +297,7 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
                 placeholder="Nome do produto"
                 required
                 aria-invalid={!!errors.name}
-                className="h-10 border-slate-200"
+                className="h-10 border-slate-200 dark:border-white/10"
                 {...nameRegister}
                 ref={(el) => {
                   nameRegister.ref(el)
@@ -311,13 +311,13 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="description" className="text-xs font-medium text-slate-700">
+            <Label htmlFor="description" className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Descrição
             </Label>
             <Input
               id="description"
               placeholder="Descrição opcional"
-              className="h-10 border-slate-200"
+              className="h-10 border-slate-200 dark:border-white/10"
               {...register('description')}
             />
             {errors.description && (
@@ -328,7 +328,7 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
           {/* ── Prices ── */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="sale_price" className="text-xs font-medium text-slate-700">
+              <Label htmlFor="sale_price" className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Preço de Venda (R$) <span className="text-red-500">*</span>
               </Label>
               <Controller
@@ -349,7 +349,7 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="cost_price" className="text-xs font-medium text-slate-700">
+              <Label htmlFor="cost_price" className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Preço de Custo (R$) <span className="text-red-500">*</span>
               </Label>
               <Controller
@@ -374,8 +374,8 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
           {showMargin && (
             <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg px-4 py-2.5 text-sm border ${
               profitValue >= 0
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                : 'bg-red-50 border-red-200 text-red-800'
+                ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-300'
+                : 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-800 dark:text-red-300'
             }`}>
               {profitValue >= 0
                 ? <TrendingUp className="h-4 w-4 shrink-0" />
@@ -405,10 +405,10 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
           )}
 
           {/* ── Stock control toggle ── */}
-          <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/60 px-4 py-3">
+          <div className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-slate-800/40 px-4 py-3">
             <div>
-              <p className="text-sm font-medium text-slate-700">Controlar estoque</p>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Controlar estoque</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Quando desativado, não limita nem desconta estoque nas vendas
               </p>
             </div>
@@ -418,7 +418,7 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
               aria-checked={trackStock ?? true}
               onClick={() => setValue('track_stock', !(trackStock ?? true))}
               className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                (trackStock ?? true) ? 'bg-primary' : 'bg-slate-300'
+                (trackStock ?? true) ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'
               }`}
             >
               <span
@@ -432,7 +432,7 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
           {(trackStock ?? true) && (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="stock_quantity" className="text-xs font-medium text-slate-700">
+                <Label htmlFor="stock_quantity" className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   Estoque Atual <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -442,7 +442,7 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
                   placeholder="0"
                   required
                   aria-invalid={!!errors.stock_quantity}
-                  className="h-10 border-slate-200"
+                  className="h-10 border-slate-200 dark:border-white/10"
                   {...register('stock_quantity')}
                 />
                 {errors.stock_quantity && (
@@ -451,7 +451,7 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="min_stock" className="text-xs font-medium text-slate-700">
+                <Label htmlFor="min_stock" className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   Estoque Mínimo <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -461,7 +461,7 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
                   placeholder="0"
                   required
                   aria-invalid={!!errors.min_stock}
-                  className="h-10 border-slate-200"
+                  className="h-10 border-slate-200 dark:border-white/10"
                   {...register('min_stock')}
                 />
                 {errors.min_stock && (
@@ -472,12 +472,12 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
           )}
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-slate-700">Categoria</Label>
+            <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">Categoria</Label>
             <Select
               defaultValue={product?.category_id ?? ''}
               onValueChange={(v) => setValue('category_id', v)}
             >
-              <SelectTrigger className="h-10 border-slate-200">
+              <SelectTrigger className="h-10 border-slate-200 dark:border-white/10">
                 <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
               <SelectContent>
@@ -491,7 +491,7 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
             </Select>
           </div>
 
-          <div className="flex gap-3 pt-2 border-t border-slate-100">
+          <div className="flex gap-3 pt-2 border-t border-slate-100 dark:border-white/8">
             <Button
               type="submit"
               disabled={isPending}
@@ -507,7 +507,7 @@ export function ProductForm({ product, categories, onSubmit }: ProductFormProps)
             <Button
               type="button"
               variant="outline"
-              className="border-slate-200 text-slate-700 hover:bg-slate-50"
+              className="border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
               onClick={() => router.back()}
             >
               <X className="mr-2 h-4 w-4" />
