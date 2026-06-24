@@ -9,6 +9,8 @@ export default defineConfig({
     // modules the same way the app does.
     alias: {
       '@': resolve(__dirname, './src'),
+      // server-only throws at import time outside Next.js — stub it in tests
+      'server-only': resolve(__dirname, './vitest.server-only-mock.ts'),
     },
   },
   test: {

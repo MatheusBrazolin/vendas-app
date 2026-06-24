@@ -50,4 +50,22 @@ describe('buildCashCloseEmail', () => {
     const { html } = buildCashCloseEmail(summary)
     expect(html).toContain('<!doctype html>')
   })
+
+  it('defaults to the end-of-day "Fechamento" wording', () => {
+    const { subject, html } = buildCashCloseEmail(summary)
+    expect(subject).toContain('Fechamento de')
+    expect(html).toContain('Fechamento de caixa')
+    expect(html).toContain('Relatório automático gerado')
+  })
+
+  it('uses partial wording when partial=true', () => {
+    const { subject, html, text } = buildCashCloseEmail(summary, 'VendasApp', {
+      partial: true,
+    })
+    expect(subject).toContain('Parcial de')
+    expect(subject).not.toContain('Fechamento de')
+    expect(html).toContain('Vendas do dia (parcial)')
+    expect(html).toContain('Relatório parcial gerado')
+    expect(text).toContain('Vendas do dia (parcial)')
+  })
 })

@@ -19,8 +19,9 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const publicDir = join(__dirname, '..', 'public')
+const electronDir = join(__dirname, '..', 'electron')
 
-const BRAND_BLUE = '#2563eb'
+const BRAND_COLOR = '#7c3aed'
 
 /**
  * The "any-purpose" icon: rounded blue square with a stylized shopping bag.
@@ -42,7 +43,7 @@ function iconSvg({ size, padding, rounded }) {
   const rx = rounded ? size * 0.22 : 0
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <rect width="${size}" height="${size}" rx="${rx}" fill="${BRAND_BLUE}"/>
+  <rect width="${size}" height="${size}" rx="${rx}" fill="${BRAND_COLOR}"/>
   ${bagPath}
 </svg>`
 }
@@ -55,6 +56,7 @@ async function emit(name, svg) {
 
 async function main() {
   await mkdir(publicDir, { recursive: true })
+  await mkdir(electronDir, { recursive: true })
   console.log('Generating PWA icons →', publicDir)
 
   // "any" purpose icons — bag fills ~50% of canvas, rounded corners
@@ -79,6 +81,12 @@ async function main() {
     'utf8',
   )
   console.log('  ✓ icon-source.svg')
+
+  // Electron desktop app icon (Windows uses this PNG, converted to ICO by electron-builder)
+  console.log('Generating Electron icon →', electronDir)
+  const electronOut = join(electronDir, 'icon.png')
+  await sharp(Buffer.from(iconSvg({ size: 512, padding: 128, rounded: true }))).png().toFile(electronOut)
+  console.log('  ✓ icon.png')
 }
 
 main().catch((err) => {

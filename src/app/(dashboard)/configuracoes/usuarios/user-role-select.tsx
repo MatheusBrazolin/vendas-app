@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useTransition } from 'react'
 import { toast } from 'sonner'
@@ -47,7 +47,7 @@ export function UserRoleSelect({ userId, role, isSelf }: UserRoleSelectProps) {
 
   return (
     <div
-      className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white p-0.5"
+      className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white p-0.5 dark:border-slate-700 dark:bg-slate-800/60"
       role="radiogroup"
       aria-label="Papel do usuário"
     >
@@ -60,8 +60,8 @@ export function UserRoleSelect({ userId, role, isSelf }: UserRoleSelectProps) {
         className={
           'inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed ' +
           (!isAdmin
-            ? 'bg-slate-100 text-slate-800'
-            : 'text-slate-500 hover:bg-slate-50 disabled:opacity-50')
+            ? 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200'
+            : 'text-slate-400 hover:bg-slate-50 disabled:opacity-40 dark:text-slate-500 dark:hover:bg-slate-700/50')
         }
         title={isSelf ? 'Você não pode rebaixar a si mesmo' : 'Definir como Funcionário'}
       >
@@ -77,8 +77,8 @@ export function UserRoleSelect({ userId, role, isSelf }: UserRoleSelectProps) {
         className={
           'inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed ' +
           (isAdmin
-            ? 'bg-blue-600 text-white shadow-sm'
-            : 'text-slate-500 hover:bg-slate-50 disabled:opacity-50')
+            ? 'bg-primary text-white shadow-sm'
+            : 'text-slate-400 hover:bg-slate-50 disabled:opacity-40 dark:text-slate-500 dark:hover:bg-slate-700/50')
         }
         title="Definir como Administrador"
       >

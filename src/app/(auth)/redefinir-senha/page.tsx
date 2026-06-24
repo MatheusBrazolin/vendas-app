@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { ResetPasswordForm } from './reset-password-form'
 
-export const metadata: Metadata = { title: 'Redefinir senha — VendasApp' }
+export const metadata: Metadata = { title: 'Redefinir senha — NexSales' }
 
 export default async function RedefinirSenhaPage({
   searchParams,

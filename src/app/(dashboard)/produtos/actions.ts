@@ -68,6 +68,12 @@ export async function lookupProductByBarcode(
       .maybeSingle()
 
     if (cached) {
+      // Reset TTL so frequently-used barcodes are never evicted by the cleanup job.
+      void supabase
+        .from('barcode_cache')
+        .update({ last_accessed_at: new Date().toISOString() })
+        .eq('code', trimmed)
+
       if (cached.source === 'not_found' || !cached.name) {
         return { status: 'not_found' }
       }

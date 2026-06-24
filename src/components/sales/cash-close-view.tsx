@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -43,14 +43,19 @@ const PAYMENT_STYLES: Record<PaymentMethod, PaymentStyle> = {
     bar: 'bg-purple-500',
   },
   credit: {
-    badge: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/15',
-    dot: 'bg-blue-500',
-    bar: 'bg-blue-500',
+    badge: 'bg-primary/5 text-primary/80 ring-1 ring-inset ring-primary/20',
+    dot: 'bg-primary/90',
+    bar: 'bg-primary/90',
   },
   debit: {
     badge: 'bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-600/15',
     dot: 'bg-orange-500',
     bar: 'bg-orange-500',
+  },
+  fiado: {
+    badge: 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/15',
+    dot: 'bg-amber-500',
+    bar: 'bg-amber-500',
   },
 }
 
@@ -165,7 +170,7 @@ export function CashCloseView({ summary }: CashCloseViewProps) {
                 value={summary.date}
                 onChange={(e) => handleDateChange(e.target.value)}
                 disabled={isPending}
-                className="h-10 pl-9 pr-3 border border-slate-200 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/15 focus:border-blue-600"
+                className="h-10 pl-9 pr-3 border border-slate-200 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
             <Button
@@ -178,7 +183,7 @@ export function CashCloseView({ summary }: CashCloseViewProps) {
             </Button>
             <Button
               onClick={handlePrint}
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+              className="bg-primary hover:bg-primary/90 text-white shadow-sm"
             >
               <Printer className="mr-1.5 h-4 w-4" />
               Imprimir
@@ -353,7 +358,7 @@ export function CashCloseView({ summary }: CashCloseViewProps) {
 
 const TONE_STYLES = {
   emerald: 'bg-emerald-50 text-emerald-700 ring-emerald-600/15',
-  blue: 'bg-blue-50 text-blue-700 ring-blue-600/15',
+  blue: 'bg-primary/5 text-primary/80 ring-primary/20',
   slate: 'bg-slate-50 text-slate-700 ring-slate-600/15',
 } as const
 

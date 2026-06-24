@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
@@ -45,7 +45,7 @@ export function AddRecipientForm() {
         />
         <Button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+          className="bg-primary hover:bg-primary/90 text-white shadow-sm"
           disabled={isPending}
         >
           {isPending ? (

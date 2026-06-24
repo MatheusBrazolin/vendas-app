@@ -19,6 +19,13 @@ export const productSchema = z.object({
     .int('Estoque mínimo deve ser inteiro')
     .min(0, 'Estoque mínimo não pode ser negativo'),
   category_id: z.string().uuid('Categoria inválida').optional().or(z.literal('')).nullable(),
+  track_stock: z.preprocess(
+    (val) => {
+      if (val === undefined || val === null) return true
+      return val === 'true' || val === true
+    },
+    z.boolean()
+  ),
 })
 
 export type ProductFormData = z.infer<typeof productSchema>

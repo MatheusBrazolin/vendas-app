@@ -16,11 +16,17 @@ export default async function DashboardLayout({
   if (!user) redirect('/login')
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 relative">
+      {/* Gradient blobs — hidden on mobile (too expensive to paint) */}
+      <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden hidden sm:block" aria-hidden>
+        <div className="absolute top-28 left-[22%] h-[560px] w-[560px] rounded-full blur-[140px] bg-primary/8 dark:bg-primary/20" />
+        <div className="absolute bottom-20 right-[18%] h-96 w-96 rounded-full blur-[110px] bg-emerald-500/6 dark:bg-emerald-500/15" />
+        <div className="absolute top-[50%] right-[38%] h-72 w-72 rounded-full blur-[90px] bg-cyan-500/5 dark:bg-cyan-500/12" />
+      </div>
       <Sidebar role={user.role} />
       <div className="flex-1 flex flex-col min-w-0">
         <Header />
-        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">{children}</main>
+        <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">{children}</main>
       </div>
       {/* Offline plumbing — only mounted for authenticated users since the
           sync calls would 401 without a session and the offline banner only

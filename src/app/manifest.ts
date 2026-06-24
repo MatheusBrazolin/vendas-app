@@ -12,10 +12,10 @@ import type { MetadataRoute } from 'next'
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'VendasApp — Gestão de Vendas',
-    short_name: 'VendasApp',
+    name: 'NexSales — Smart Sales Platform',
+    short_name: 'NexSales',
     description:
-      'Sistema de gestão de vendas e estoque — PDV, controle de produtos e fechamento de caixa.',
+      'Plataforma moderna de gestão de vendas, clientes e performance do seu negócio.',
     lang: 'pt-BR',
     start_url: '/vendas/nova',
     scope: '/',

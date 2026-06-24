@@ -1,6 +1,8 @@
+import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { brDayRangeUTC } from '@/lib/utils/datetime'
 import type { PaymentMethod, Sale, SaleWithItems } from '@/types/database'
+import { isElectron } from '@/lib/db/client'
 
 export interface SalesListParams {
   payment?: PaymentMethod
@@ -23,6 +25,11 @@ const DEFAULT_PAGE_SIZE = 25
 export async function getSalesPaged(
   params: SalesListParams = {},
 ): Promise<SalesListResult> {
+  if (isElectron()) {
+    const { getSalesPaged: sqliteGet } = await import('@/lib/db/queries/sales')
+    return sqliteGet(params)
+  }
+
   const supabase = await createClient()
   const page = Math.max(1, params.page ?? 1)
   const pageSize = Math.max(1, Math.min(100, params.pageSize ?? DEFAULT_PAGE_SIZE))
@@ -37,10 +44,6 @@ export async function getSalesPaged(
   }
 
   if (params.day) {
-    // Filtro de dia exato em BRT. brDayRangeUTC traduz "2026-06-02" para
-    // o intervalo UTC que cobre 00:00 → 23:59:59.999 em São Paulo —
-    // sem ele, uma venda às 22h SP do dia 02 (= 01h UTC do dia 03) cairia
-    // no dia errado, e filtrar "03" mostraria venda do "02".
     const { start, end } = brDayRangeUTC(params.day)
     query = query.gte('created_at', start).lte('created_at', end)
   }
@@ -65,11 +68,15 @@ export async function getSalesPaged(
 }
 
 export async function getSaleById(id: string): Promise<SaleWithItems | null> {
-  const supabase = await createClient()
+  if (isElectron()) {
+    const { getSaleById: sqliteGet } = await import('@/lib/db/queries/sales')
+    return sqliteGet(id)
+  }
 
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('sales')
-    .select('*, sale_items(*, products(*))')
+    .select('*, sale_items(*, products(*)), customers(full_name)')
     .eq('id', id)
     .single()
 
@@ -78,8 +85,12 @@ export async function getSaleById(id: string): Promise<SaleWithItems | null> {
 }
 
 export async function getTopProducts(limit = 5) {
-  const supabase = await createClient()
+  if (isElectron()) {
+    const { getTopProducts: sqliteGet } = await import('@/lib/db/queries/sales')
+    return sqliteGet(limit)
+  }
 
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('sale_items')
     .select('product_id, quantity, products(name, code)')

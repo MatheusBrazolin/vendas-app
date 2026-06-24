@@ -1,6 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
-export type PaymentMethod = 'cash' | 'credit' | 'debit' | 'pix'
+export type PaymentMethod = 'cash' | 'credit' | 'debit' | 'pix' | 'fiado'
 
 export type UserRole = 'admin' | 'employee'
 
@@ -37,6 +37,7 @@ export interface Database {
           min_stock: number
           category_id: string | null
           is_active: boolean
+          track_stock: boolean
           created_at: string
           updated_at: string
         }
@@ -51,6 +52,7 @@ export interface Database {
           min_stock?: number
           category_id?: string | null
           is_active?: boolean
+          track_stock?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -65,6 +67,7 @@ export interface Database {
           min_stock?: number
           category_id?: string | null
           is_active?: boolean
+          track_stock?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -78,6 +81,68 @@ export interface Database {
           }
         ]
       }
+      customers: {
+        Row: {
+          id: string
+          full_name: string
+          phone: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          full_name: string
+          phone?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string
+          phone?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      debt_payments: {
+        Row: {
+          id: string
+          customer_id: string
+          amount: number
+          notes: string | null
+          recorded_by: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          customer_id: string
+          amount: number
+          notes?: string | null
+          recorded_by: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          customer_id?: string
+          amount?: number
+          notes?: string | null
+          recorded_by?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'debt_payments_customer_id_fkey'
+            columns: ['customer_id']
+            isOneToOne: false
+            referencedRelation: 'customers'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       sales: {
         Row: {
           id: string
@@ -87,6 +152,7 @@ export interface Database {
           seller_id: string
           created_at: string
           client_uuid: string | null
+          customer_id: string | null
         }
         Insert: {
           id?: string
@@ -96,6 +162,7 @@ export interface Database {
           seller_id: string
           created_at?: string
           client_uuid?: string | null
+          customer_id?: string | null
         }
         Update: {
           id?: string
@@ -105,8 +172,17 @@ export interface Database {
           seller_id?: string
           created_at?: string
           client_uuid?: string | null
+          customer_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'sales_customer_id_fkey'
+            columns: ['customer_id']
+            isOneToOne: false
+            referencedRelation: 'customers'
+            referencedColumns: ['id']
+          }
+        ]
       }
       sale_items: {
         Row: {
@@ -116,6 +192,7 @@ export interface Database {
           quantity: number
           unit_price: number
           subtotal: number
+          item_description: string | null
         }
         Insert: {
           id?: string
@@ -124,6 +201,7 @@ export interface Database {
           quantity: number
           unit_price: number
           subtotal: number
+          item_description?: string | null
         }
         Update: {
           id?: string
@@ -132,6 +210,7 @@ export interface Database {
           quantity?: number
           unit_price?: number
           subtotal?: number
+          item_description?: string | null
         }
         Relationships: [
           {
@@ -224,6 +303,7 @@ export interface Database {
           description: string | null
           created_at: string
           updated_at: string
+          last_accessed_at: string
         }
         Insert: {
           code: string
@@ -232,6 +312,7 @@ export interface Database {
           description?: string | null
           created_at?: string
           updated_at?: string
+          last_accessed_at?: string
         }
         Update: {
           code?: string
@@ -240,11 +321,29 @@ export interface Database {
           description?: string | null
           created_at?: string
           updated_at?: string
+          last_accessed_at?: string
         }
         Relationships: []
       }
     }
-    Views: Record<string, never>
+    Views: {
+      customer_balances: {
+        Row: {
+          id: string
+          full_name: string
+          phone: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+          total_fiado: number
+          total_paid: number
+          current_debt: number
+          last_payment_at: string | null
+          first_fiado_at: string | null
+        }
+        Relationships: []
+      }
+    }
     Functions: {
       create_sale_with_items: {
         Args: {
@@ -252,6 +351,26 @@ export interface Database {
           p_notes: string | null
           p_items: Json
           p_client_uuid?: string | null
+          p_customer_id?: string | null
+        }
+        Returns: string
+      }
+      search_customers: {
+        Args: { p_query: string }
+        Returns: {
+          id: string
+          full_name: string
+          phone: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }[]
+      }
+      record_debt_payment: {
+        Args: {
+          p_customer_id: string
+          p_amount: number
+          p_notes?: string | null
         }
         Returns: string
       }
@@ -286,6 +405,10 @@ export interface Database {
         }
         Returns: null
       }
+      cleanup_barcode_cache: {
+        Args: Record<string, never>
+        Returns: number
+      }
     }
   }
 }
@@ -294,6 +417,9 @@ export type Category = Database['public']['Tables']['categories']['Row']
 export type Product = Database['public']['Tables']['products']['Row']
 export type Sale = Database['public']['Tables']['sales']['Row']
 export type SaleItem = Database['public']['Tables']['sale_items']['Row']
+export type Customer = Database['public']['Tables']['customers']['Row']
+export type DebtPayment = Database['public']['Tables']['debt_payments']['Row']
+export type CustomerBalance = Database['public']['Views']['customer_balances']['Row']
 
 export type ProductWithCategory = Product & {
   categories: Category | null
@@ -301,9 +427,12 @@ export type ProductWithCategory = Product & {
 
 export type SaleWithItems = Sale & {
   sale_items: (SaleItem & { products: Product })[]
+  customers: { full_name: string } | null
 }
 
 export type CartItem = {
   product: Product
   quantity: number
+  customPrice?: number
+  itemDescription?: string
 }

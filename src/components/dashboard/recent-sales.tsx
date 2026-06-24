@@ -1,4 +1,4 @@
-import Link from 'next/link'
+﻿import Link from 'next/link'
 import { ArrowRight, ShoppingCart } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -11,19 +11,20 @@ interface RecentSalesProps {
 }
 
 const PAYMENT_BADGE: Record<PaymentMethod, { badge: string; dot: string }> = {
-  cash: { badge: 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/15', dot: 'bg-green-500' },
-  pix: { badge: 'bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-600/15', dot: 'bg-purple-500' },
-  credit: { badge: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/15', dot: 'bg-blue-500' },
-  debit: { badge: 'bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-600/15', dot: 'bg-orange-500' },
+  cash: { badge: 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 ring-1 ring-inset ring-green-600/15 dark:ring-green-500/20', dot: 'bg-green-500' },
+  pix: { badge: 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 ring-1 ring-inset ring-purple-600/15 dark:ring-purple-500/20', dot: 'bg-purple-500' },
+  credit: { badge: 'bg-primary/5 dark:bg-primary/10 text-primary/80 dark:text-primary/90 ring-1 ring-inset ring-primary/20', dot: 'bg-primary/90' },
+  debit: { badge: 'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 ring-1 ring-inset ring-orange-600/15 dark:ring-orange-500/20', dot: 'bg-orange-500' },
+  fiado: { badge: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-1 ring-inset ring-amber-600/15 dark:ring-amber-500/20', dot: 'bg-amber-500' },
 }
 
 export function RecentSales({ sales }: RecentSalesProps) {
   return (
-    <Card className="border-slate-200/80 shadow-sm">
-      <CardHeader className="pb-3">
+    <Card className="flex flex-col h-full border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 shadow-sm">
+      <CardHeader className="pb-3 shrink-0">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold text-slate-900 flex items-center gap-2">
-            <ShoppingCart className="h-4 w-4 text-slate-500" />
+          <CardTitle className="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <ShoppingCart className="h-4 w-4 text-slate-500 dark:text-slate-400" />
             Últimas Vendas
           </CardTitle>
           <Button
@@ -39,32 +40,32 @@ export function RecentSales({ sales }: RecentSalesProps) {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 flex-1 flex flex-col min-h-0">
         {sales.length === 0 ? (
           <div className="px-6 py-8 text-center">
             <p className="text-sm text-slate-400">Nenhuma venda registrada ainda.</p>
           </div>
         ) : (
-          <div>
+          <div className="flex-1 overflow-y-auto min-h-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {sales.map((sale, idx) => {
               const style = PAYMENT_BADGE[sale.payment_method as PaymentMethod] ?? PAYMENT_BADGE.cash
               return (
                 <Link
                   key={sale.id}
                   href={`/vendas/${sale.id}`}
-                  className={`flex items-center justify-between px-6 py-3 hover:bg-slate-50/80 transition-colors ${
-                    idx !== sales.length - 1 ? 'border-b border-slate-100' : ''
+                  className={`flex items-center justify-between px-6 py-3 hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors ${
+                    idx !== sales.length - 1 ? 'border-b border-slate-100 dark:border-white/5' : ''
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-xs font-semibold text-slate-500 tabular-nums">
+                    <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center shrink-0 text-xs font-semibold text-slate-500 dark:text-slate-400 tabular-nums">
                       {idx + 1}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-slate-900 tabular-nums">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
                         {formatCurrency(sale.total_amount)}
                       </p>
-                      <p className="text-xs text-slate-400 mt-0.5">{formatRelative(sale.created_at)}</p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{formatRelative(sale.created_at)}</p>
                     </div>
                   </div>
                   <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ${style.badge}`}>

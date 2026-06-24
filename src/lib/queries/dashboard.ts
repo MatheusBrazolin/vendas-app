@@ -1,12 +1,18 @@
+import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import type { Sale } from '@/types/database'
 import { startOfMonth, endOfMonth, subDays } from 'date-fns'
 import { brDayRangeUTC, formatBRDayMonth, todayBRISO } from '@/lib/utils/datetime'
+import { isElectron } from '@/lib/db/client'
 
 export async function getDashboardMetrics() {
+  if (isElectron()) {
+    const { getDashboardMetrics: sqliteGet } = await import('@/lib/db/queries/dashboard')
+    return sqliteGet()
+  }
+
   const supabase = await createClient()
   const now = new Date()
-  // "Today" from the cashier's wall clock, not the UTC server's.
   const today = brDayRangeUTC(todayBRISO())
 
   const [todaySales, monthSales, allProducts, recentSales] = await Promise.all([
@@ -55,6 +61,11 @@ export async function getDashboardMetrics() {
 }
 
 export async function getSalesLast30Days() {
+  if (isElectron()) {
+    const { getSalesLast30Days: sqliteGet } = await import('@/lib/db/queries/dashboard')
+    return sqliteGet()
+  }
+
   const supabase = await createClient()
   const now = new Date()
   const from = subDays(now, 29)
@@ -67,8 +78,6 @@ export async function getSalesLast30Days() {
 
   if (error) throw new Error(error.message)
 
-  // Bucket by BRT day so a sale at 22h SP (which is already "tomorrow" in UTC)
-  // counts on the day the operator actually rang it up.
   const byDay: Record<string, number> = {}
   for (let i = 0; i < 30; i++) {
     const day = formatBRDayMonth(subDays(now, 29 - i))

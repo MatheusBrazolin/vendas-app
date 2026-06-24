@@ -1,8 +1,8 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useRef, type KeyboardEvent } from 'react'
 import { toast } from 'sonner'
-import { Search, Plus, Minus, ScanBarcode } from 'lucide-react'
+import { Search, Plus, Minus, ScanBarcode, CheckCircle2, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/utils/format'
@@ -23,20 +23,43 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
   const [results, setResults] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
   const [scanning, setScanning] = useState(false)
-  /** Quantity chosen per product before clicking "Adicionar". */
-  const [quantities, setQuantities] = useState<Record<string, number>>({})
-  const inputRef = useRef<HTMLInputElement>(null)
-  const debouncedQuery = useDebounce(query, 300)
+  const [highlightedIndex, setHighlightedIndex] = useState(-1)
 
-  // Auto-focus the input on mount so the USB scanner can write directly into it.
-  // Also warm the local cache so the PDV isn't blank on a fresh first load.
+  /** Product waiting for quantity confirmation. null = search mode. */
+  const [staged, setStaged] = useState<{ product: Product; quantity: number } | null>(null)
+
+  const searchRef = useRef<HTMLInputElement>(null)
+  const stagedQtyRef = useRef<HTMLInputElement>(null)
+  const resultRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const debouncedQuery = useDebounce(query, 300)
+  const didStageRef = useRef(false)
+
+  // Auto-focus search on mount + warm the local cache.
   useEffect(() => {
-    inputRef.current?.focus()
+    searchRef.current?.focus()
     void ensureProductsCached()
   }, [])
 
-  // Fuzzy search for manual typing (does NOT auto-add — just shows the dropdown).
-  // Reads from the offline cache so it works identically online and offline.
+  // Reset highlight whenever results change.
+  useEffect(() => {
+    setHighlightedIndex(-1)
+    resultRefs.current = []
+  }, [results])
+
+  // Handle focus transitions after React commits the DOM.
+  useEffect(() => {
+    if (staged) {
+      didStageRef.current = true
+      requestAnimationFrame(() => {
+        stagedQtyRef.current?.select()
+        stagedQtyRef.current?.focus()
+      })
+    } else if (didStageRef.current) {
+      requestAnimationFrame(() => searchRef.current?.focus())
+    }
+  }, [staged])
+
+  // Name search — fuzzy match from offline cache.
   useEffect(() => {
     if (!debouncedQuery.trim()) {
       setResults([])
@@ -45,60 +68,50 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
     let cancelled = false
     setLoading(true)
     searchProducts(debouncedQuery)
-      .then((data) => {
-        if (cancelled) return
-        setResults(data)
-      })
-      .catch(() => {
-        if (cancelled) return
-        setResults([])
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
+      .then((data) => { if (!cancelled) setResults(data) })
+      .catch(() => { if (!cancelled) setResults([]) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [debouncedQuery])
 
-  function getQuantity(product: Product): number {
-    return quantities[product.id] ?? 1
+  /** Move a product to the staging panel, clearing the search dropdown. */
+  function stageProduct(product: Product) {
+    setStaged({ product, quantity: 1 })
+    setQuery('')
+    setResults([])
   }
 
-  function setQuantity(product: Product, value: number) {
-    const clamped = Math.max(1, Math.min(product.stock_quantity, Math.floor(value) || 1))
-    setQuantities((prev) => ({ ...prev, [product.id]: clamped }))
-  }
-
-  function handleAdd(product: Product, quantity: number) {
+  /** Confirm the staged product: add to cart (focus returns via useEffect). */
+  function confirmStaged() {
+    if (!staged) return
+    const { product, quantity } = staged
     if (quantity > product.stock_quantity) {
       toast.error(`Estoque insuficiente. Disponível: ${product.stock_quantity}`)
       return
     }
     onAdd({ product, quantity })
-    setQuery('')
-    setResults([])
-    setQuantities({})
-    // Return focus to the input so the next scan/search keeps flowing
-    inputRef.current?.focus()
+    setStaged(null)
   }
 
-  /**
-   * Scanner workflow: USB readers type the code + Enter.
-   * On Enter we try an EXACT code match and auto-add ONE unit to the cart.
-   *
-   * Only called when the input looks like a numeric barcode — searching by
-   * name does NOT route through here, so the user never sees a misleading
-   * "produto não encontrado" toast when typing a product name.
-   */
+  /** Cancel staging (focus returns via useEffect). */
+  function cancelStaged() {
+    setStaged(null)
+  }
+
+  function setStagedQty(value: number) {
+    if (!staged) return
+    const clamped = Math.max(1, Math.min(staged.product.stock_quantity, Math.floor(value) || 1))
+    setStaged((prev) => prev ? { ...prev, quantity: clamped } : null)
+  }
+
   async function handleBarcodeLookup(code: string) {
     const trimmed = code.trim()
     if (!trimmed) return
 
     setScanning(true)
-    let data: Product | null = null
+    let product: Product | null = null
     try {
-      data = await getByCode(trimmed)
+      product = await getByCode(trimmed)
     } catch {
       setScanning(false)
       toast.error('Erro ao buscar produto. Tente novamente.')
@@ -106,74 +119,191 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
     }
     setScanning(false)
 
-    if (!data) {
+    if (!product) {
       toast.error(`Código não encontrado: ${trimmed}`)
-      inputRef.current?.select()
+      searchRef.current?.select()
+      return
+    }
+    if (product.stock_quantity <= 0) {
+      toast.error(`Sem estoque: ${product.name}`)
+      searchRef.current?.select()
       return
     }
 
-    if (data.stock_quantity <= 0) {
-      toast.error(`Sem estoque: ${data.name}`)
-      inputRef.current?.select()
-      return
-    }
-
-    handleAdd(data, 1)
+    stageProduct(product)
   }
 
-  /** A pure-digit string of 4+ chars is treated as a barcode/SKU. */
   function looksNumeric(value: string): boolean {
     return /^\d{4,}$/.test(value.trim())
   }
 
-  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+  function handleSearchKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    // ── Arrow navigation ──────────────────────────────────────
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      if (results.length === 0) return
+      const next = Math.min(highlightedIndex + 1, results.length - 1)
+      setHighlightedIndex(next)
+      resultRefs.current[next]?.scrollIntoView({ block: 'nearest' })
+      return
+    }
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      if (results.length === 0) return
+      const next = Math.max(highlightedIndex - 1, 0)
+      setHighlightedIndex(next)
+      resultRefs.current[next]?.scrollIntoView({ block: 'nearest' })
+      return
+    }
+
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      setResults([])
+      setQuery('')
+      return
+    }
+
+    // ── Enter ─────────────────────────────────────────────────
     if (e.key !== 'Enter') return
     e.preventDefault()
     const value = e.currentTarget.value.trim()
     if (!value) return
 
-    // Barcode-shaped input: scanner flow → exact match + auto-add 1
     if (looksNumeric(value)) {
       void handleBarcodeLookup(value)
       return
     }
 
-    // Name-shaped input: if the dropdown narrowed to a single product, add it.
-    // Otherwise just let the user pick from the list — never show "not found".
-    if (results.length === 1) {
-      const product = results[0]
-      handleAdd(product, getQuantity(product))
+    // Highlighted item takes priority; fall back to single result.
+    if (highlightedIndex >= 0 && results[highlightedIndex]) {
+      stageProduct(results[highlightedIndex])
+    } else if (results.length === 1) {
+      stageProduct(results[0])
+    }
+  }
+
+  function handleStagedQtyKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      confirmStaged()
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      cancelStaged()
     }
   }
 
   return (
     <div className="space-y-2">
+      {/* ── Search input ── */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <Search aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <Input
-          ref={inputRef}
+          ref={searchRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={handleSearchKeyDown}
           placeholder="Bipe o código de barras OU digite o nome do produto..."
           className="pl-9 pr-10 h-11 text-sm"
           autoComplete="off"
           spellCheck={false}
           inputMode="text"
+          aria-label="Buscar produto por código ou nome"
+          aria-activedescendant={highlightedIndex >= 0 ? `result-${highlightedIndex}` : undefined}
+          role="combobox"
+          aria-expanded={results.length > 0}
+          aria-controls="product-results"
         />
-        <ScanBarcode className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <ScanBarcode aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
       </div>
 
-      <div className="px-1 space-y-1 text-[11px] text-slate-400">
-        <p>
-          <ScanBarcode className="inline h-3 w-3 mr-1 -mt-0.5 text-slate-400" />
-          <strong className="text-slate-600">Com código:</strong> bipe o leitor — adiciona 1 unidade no carrinho.
-        </p>
-        <p>
-          <Search className="inline h-3 w-3 mr-1 -mt-0.5 text-slate-400" />
-          <strong className="text-slate-600">Sem código:</strong> digite o nome, ajuste a quantidade e clique em <strong>Adicionar</strong>.
-        </p>
-      </div>
+      {/* ── Staged product: quantity confirmation ── */}
+      {staged && (
+        <div className="rounded-lg border-2 border-primary/60 bg-primary/5 dark:bg-primary/10 p-3 space-y-3 shadow-sm">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{staged.product.name}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Cód: {staged.product.code} · Estoque: {staged.product.stock_quantity} ·{' '}
+                {formatCurrency(staged.product.sale_price)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={cancelStaged}
+              className="shrink-0 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 mt-0.5"
+              aria-label="Cancelar"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-400 shrink-0">Quantidade:</span>
+
+            <div className="inline-flex items-center rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setStagedQty(staged.quantity - 1)}
+                disabled={staged.quantity <= 1}
+                className="h-9 w-9 inline-flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/8 disabled:opacity-40 transition-colors"
+                aria-label="Diminuir"
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+              <input
+                ref={stagedQtyRef}
+                type="number"
+                min={1}
+                max={staged.product.stock_quantity}
+                value={staged.quantity}
+                onChange={(e) => setStagedQty(parseInt(e.target.value, 10) || 1)}
+                onFocus={(e) => e.currentTarget.select()}
+                onKeyDown={handleStagedQtyKeyDown}
+                className="w-14 h-9 text-center text-base font-bold tabular-nums text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border-x border-slate-200 dark:border-white/10 focus:outline-none focus:bg-primary/10 dark:focus:bg-primary/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                aria-label="Quantidade"
+              />
+              <button
+                type="button"
+                onClick={() => setStagedQty(staged.quantity + 1)}
+                disabled={staged.quantity >= staged.product.stock_quantity}
+                className="h-9 w-9 inline-flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/8 disabled:opacity-40 transition-colors"
+                aria-label="Aumentar"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+
+            <Button
+              size="sm"
+              className="h-9 bg-green-600 hover:bg-green-700 text-white font-semibold shadow-sm flex-1 sm:flex-initial"
+              onClick={confirmStaged}
+            >
+              <CheckCircle2 className="h-4 w-4 mr-1.5" />
+              Adicionar <span className="ml-1 text-green-200 font-normal text-xs hidden sm:inline">↵ Enter</span>
+            </Button>
+          </div>
+
+          <p className="text-[11px] text-primary font-medium">
+            Digite a quantidade e pressione <strong>Enter</strong> · <strong>Esc</strong> para cancelar
+          </p>
+        </div>
+      )}
+
+      {/* ── Hints (only in search mode, no results open) ── */}
+      {!staged && results.length === 0 && (
+        <div className="px-1 space-y-1 text-[11px] text-slate-400 dark:text-slate-500">
+          <p>
+            <ScanBarcode aria-hidden="true" className="inline h-3 w-3 mr-1 -mt-0.5 text-slate-400 dark:text-slate-500" />
+            <strong className="text-slate-600 dark:text-slate-300">Com código:</strong> bipe → confirme a quantidade → <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px] dark:bg-slate-700 dark:text-slate-300">Enter</kbd>
+          </p>
+          <p>
+            <Search aria-hidden="true" className="inline h-3 w-3 mr-1 -mt-0.5 text-slate-400 dark:text-slate-500" />
+            <strong className="text-slate-600 dark:text-slate-300">Sem código:</strong> digite → <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px] dark:bg-slate-700 dark:text-slate-300">↓</kbd> para navegar → <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px] dark:bg-slate-700 dark:text-slate-300">Enter</kbd> para selecionar
+          </p>
+        </div>
+      )}
 
       {(loading || scanning) && (
         <p className="text-xs text-slate-400 px-1">
@@ -181,76 +311,65 @@ export function ProductSearch({ onAdd }: ProductSearchProps) {
         </p>
       )}
 
-      {results.length > 0 && (
-        <div className="border rounded-lg divide-y bg-white shadow-sm">
-          {results.map((product) => {
-            const qty = getQuantity(product)
-            return (
-              <div
-                key={product.id}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{product.name}</p>
-                  <p className="text-xs text-slate-500">
-                    Cód: {product.code} · Estoque: {product.stock_quantity} ·{' '}
-                    {formatCurrency(product.sale_price)}
+      {/* ── Search results dropdown ── */}
+      {results.length > 0 && !staged && (
+        <div
+          id="product-results"
+          role="listbox"
+          className="border border-slate-200 dark:border-white/8 rounded-lg divide-y divide-slate-100 dark:divide-white/5 bg-white dark:bg-slate-800 shadow-sm max-h-48 sm:max-h-64 overflow-y-auto"
+        >
+          {results.map((product, index) => (
+            <button
+              key={product.id}
+              id={`result-${index}`}
+              ref={(el) => { resultRefs.current[index] = el }}
+              type="button"
+              role="option"
+              aria-selected={index === highlightedIndex}
+              className={`w-full text-left flex items-center justify-between gap-3 px-4 py-2.5 transition-colors focus:outline-none ${
+                index === highlightedIndex
+                  ? 'bg-primary/5 dark:bg-primary/15 border-l-2 border-l-blue-500'
+                  : 'hover:bg-slate-50 dark:hover:bg-white/5'
+              }`}
+              onClick={() => stageProduct(product)}
+              onMouseEnter={() => setHighlightedIndex(index)}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className={`text-sm font-medium truncate ${index === highlightedIndex ? 'text-primary/80 dark:text-primary' : 'text-slate-900 dark:text-slate-100'}`}>
+                    {product.name}
                   </p>
+                  {product.stock_quantity <= 0 && (
+                    <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400">
+                      Sem estoque
+                    </span>
+                  )}
                 </div>
-
-                {/* No mobile o bloco vira coluna do pai (flex-col) e os
-                    controles ocupam toda a largura do card — botão "Adicionar"
-                    grande, fácil de tocar. No desktop fica compacto na lateral. */}
-                <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-                  <div className="inline-flex items-center rounded-md border border-slate-200 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => setQuantity(product, qty - 1)}
-                      disabled={qty <= 1}
-                      className="h-9 w-9 inline-flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                      aria-label="Diminuir quantidade"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                    <input
-                      type="number"
-                      min={1}
-                      max={product.stock_quantity}
-                      value={qty}
-                      onChange={(e) =>
-                        setQuantity(product, parseInt(e.target.value, 10) || 1)
-                      }
-                      onFocus={(e) => e.currentTarget.select()}
-                      className="w-12 h-9 text-center text-sm font-medium tabular-nums bg-white border-x border-slate-200 focus:outline-none focus:bg-blue-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      aria-label="Quantidade"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setQuantity(product, qty + 1)}
-                      disabled={qty >= product.stock_quantity}
-                      className="h-9 w-9 inline-flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                      aria-label="Aumentar quantidade"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  <Button
-                    size="sm"
-                    className="flex-1 sm:flex-initial h-9 bg-green-600 hover:bg-green-700 text-white shadow-sm"
-                    onClick={() => handleAdd(product, qty)}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Adicionar
-                  </Button>
-                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Cód: {product.code} · Estoque: {product.stock_quantity} ·{' '}
+                  {formatCurrency(product.sale_price)}
+                </p>
               </div>
-            )
-          })}
+              <span className="shrink-0 text-[11px] text-slate-400 dark:text-slate-500 hidden sm:block">
+                {index === highlightedIndex
+                  ? <span className="text-primary/80 dark:text-primary font-medium">↵ Enter</span>
+                  : 'clique ou ↓'}
+              </span>
+            </button>
+          ))}
         </div>
       )}
 
-      {!loading && !scanning && query && results.length === 0 && (
+      {/* Navigation hint when dropdown is open */}
+      {results.length > 1 && !staged && (
+        <p className="text-[11px] text-slate-400 dark:text-slate-500 px-1">
+          <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-500 font-mono text-[10px] dark:bg-slate-700 dark:text-slate-300">↓ ↑</kbd> navegar ·{' '}
+          <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-500 font-mono text-[10px] dark:bg-slate-700 dark:text-slate-300">Enter</kbd> selecionar ·{' '}
+          <kbd className="px-1 py-0.5 rounded bg-slate-100 text-slate-500 font-mono text-[10px] dark:bg-slate-700 dark:text-slate-300">Esc</kbd> fechar
+        </p>
+      )}
+
+      {!loading && !scanning && !staged && query && results.length === 0 && (
         <p className="text-sm text-slate-400 px-1">Nenhum produto encontrado em estoque.</p>
       )}
     </div>

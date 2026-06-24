@@ -10,6 +10,7 @@
  * Browser-only: `getDB()` throws on the server. Import from client components.
  */
 
+import 'client-only'
 import { getDB, type PendingSale, type PendingSaleItem } from './db'
 import { syncProducts } from './sync'
 import { createSale, type CreateSaleResult } from '@/app/(dashboard)/vendas/actions'
@@ -22,6 +23,7 @@ export interface QueueSaleInput {
   notes: string
   items: PendingSaleItem[]
   total: number
+  customer_id?: string | null
 }
 
 /**
@@ -37,6 +39,7 @@ export async function queueSale(input: QueueSaleInput): Promise<void> {
     notes: input.notes,
     items: input.items,
     total: input.total,
+    customer_id: input.customer_id ?? null,
     createdAt: new Date().toISOString(),
     status: 'pending',
     attempts: 0,
@@ -60,11 +63,6 @@ export async function queueSale(input: QueueSaleInput): Promise<void> {
   }
 }
 
-/** All queued sales, oldest first. */
-export async function getPendingSales(): Promise<PendingSale[]> {
-  return getDB().pendingSales.orderBy('createdAt').toArray()
-}
-
 /** Counts split by status, for the header badge. */
 export async function getPendingCount(): Promise<{ pending: number; failed: number }> {
   const all = await getDB().pendingSales.toArray()
@@ -82,6 +80,7 @@ const TERMINAL_CODES: ReadonlySet<string> = new Set([
   'insufficient_stock',
   'product_not_found',
   'empty_cart',
+  'customer_required',
 ])
 
 // Guards against overlapping flushes — SyncProvider can trigger on mount,
@@ -122,8 +121,11 @@ export async function flushPendingSales(): Promise<{ synced: number; failed: num
         items: sale.items.map((i) => ({
           product_id: i.product_id,
           quantity: i.quantity,
+          unit_price: i.unit_price,
+          ...(i.item_description ? { item_description: i.item_description } : {}),
         })),
         client_uuid: sale.id,
+        customer_id: sale.customer_id ?? null,
       }).catch((err: unknown) => ({
         // A thrown call means the request never reached the server (network).
         error: err instanceof Error ? err.message : 'network',

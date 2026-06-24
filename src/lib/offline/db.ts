@@ -12,14 +12,18 @@
  * around `window.indexedDB`, which doesn't exist on the server.
  */
 
+import 'client-only'
 import Dexie, { type Table } from 'dexie'
-import type { Product, Category, PaymentMethod } from '@/types/database'
+import type { Product, Category, CustomerBalance, PaymentMethod } from '@/types/database'
 
 /** Mirror of `public.products.Row`. Same shape so server types reuse cleanly. */
 export type CachedProduct = Product
 
 /** Mirror of `public.categories.Row`. */
 export type CachedCategory = Category
+
+/** Mirror of the `customer_balances` view — used for offline fiado search. */
+export type CachedCustomer = CustomerBalance
 
 /** One line of a queued offline sale. Carries enough to render a provisional
  *  receipt and to rebuild the RPC payload without re-reading the catalog. */
@@ -28,6 +32,7 @@ export interface PendingSaleItem {
   quantity: number
   name: string
   unit_price: number
+  item_description?: string
 }
 
 /**
@@ -41,6 +46,8 @@ export interface PendingSale {
   notes: string
   items: PendingSaleItem[]
   total: number
+  /** UUID of the customer for fiado sales; null/undefined for regular sales. */
+  customer_id?: string | null
   createdAt: string // ISO timestamp
   /** `pending` = waiting to sync; `failed` = server rejected (e.g. stock), needs review. */
   status: 'pending' | 'failed'
@@ -56,7 +63,7 @@ export interface PendingSale {
  * and by the UI to render "última sincronização há X".
  */
 export interface SyncMeta {
-  key: 'products' | 'categories'
+  key: 'products' | 'categories' | 'customers'
   lastSyncAt: string // ISO timestamp
   count: number
 }
@@ -64,6 +71,7 @@ export interface SyncMeta {
 class VendasAppDB extends Dexie {
   products!: Table<CachedProduct, string>
   categories!: Table<CachedCategory, string>
+  customers!: Table<CachedCustomer, string>
   syncMeta!: Table<SyncMeta, string>
   pendingSales!: Table<PendingSale, string>
 
@@ -72,20 +80,25 @@ class VendasAppDB extends Dexie {
     // v1 — initial offline cache schema. Bump and add `.upgrade(...)` blocks
     // here when the local schema changes; never edit a past version.
     this.version(1).stores({
-      // Index `code` + `name` so the PDV search (by barcode or fuzzy name)
-      // hits IndexedDB indexes instead of full scans. `is_active` indexed
-      // so we can filter inactive products without a scan.
       products: 'id, code, name, is_active',
       categories: 'id, name',
       syncMeta: 'key',
     })
-    // v2 — offline write queue. `status` indexed so we can list pending vs
-    // failed sales without a scan; `createdAt` for chronological flush order.
+    // v2 — offline write queue.
     this.version(2).stores({
       products: 'id, code, name, is_active',
       categories: 'id, name',
       syncMeta: 'key',
       pendingSales: 'id, status, createdAt',
+    })
+    // v3 — customer cache for offline fiado sales. `full_name` and `phone`
+    // indexed so the PDV search doesn't require a full table scan.
+    this.version(3).stores({
+      products: 'id, code, name, is_active',
+      categories: 'id, name',
+      syncMeta: 'key',
+      pendingSales: 'id, status, createdAt',
+      customers: 'id, full_name, phone',
     })
   }
 }

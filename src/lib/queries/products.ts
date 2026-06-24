@@ -1,5 +1,7 @@
+import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import type { Category, ProductWithCategory } from '@/types/database'
+import { isElectron } from '@/lib/db/client'
 
 export type StockFilter = 'all' | 'ok' | 'low' | 'out'
 
@@ -24,6 +26,15 @@ const DEFAULT_PAGE_SIZE = 20
 export async function getProductsPaged(
   params: ProductsListParams = {},
 ): Promise<ProductsListResult> {
+  // Electron reads directly from SQLite — always fresh (synced every 60 s),
+  // instant, and immune to the tryQuery race condition where a hanging Supabase
+  // TCP connection causes the 5-second fallback timer to fire before this
+  // catch-block can return SQLite data.
+  if (isElectron()) {
+    const { getProductsPaged: sqliteGet } = await import('@/lib/db/queries/products')
+    return sqliteGet(params)
+  }
+
   const supabase = await createClient()
   const page = Math.max(1, params.page ?? 1)
   const pageSize = Math.max(1, Math.min(100, params.pageSize ?? DEFAULT_PAGE_SIZE))
@@ -42,17 +53,12 @@ export async function getProductsPaged(
     query = query.eq('category_id', params.categoryId)
   }
 
-  // Stock filters: 'out' = stock <= 0, 'low' = stock <= min_stock (and > 0),
-  // 'ok' = stock > min_stock. PostgREST doesn't support column-vs-column
-  // comparisons natively, so we fetch a wider range and filter in memory only
-  // for 'low' and 'ok'. 'out' and 'all' map cleanly to SQL.
   if (params.stock === 'out') {
     query = query.lte('stock_quantity', 0)
   }
 
   const from = (page - 1) * pageSize
   const to = from + pageSize - 1
-
   query = query.order('name').range(from, to)
 
   const { data, error, count } = await query
@@ -73,8 +79,12 @@ export async function getProductsPaged(
 }
 
 export async function getLowStock(): Promise<ProductWithCategory[]> {
-  const supabase = await createClient()
+  if (isElectron()) {
+    const { getLowStock: sqliteGet } = await import('@/lib/db/queries/products')
+    return sqliteGet()
+  }
 
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('products')
     .select('*, categories(id, name)')
@@ -90,6 +100,11 @@ export async function getLowStock(): Promise<ProductWithCategory[]> {
 }
 
 export async function getCategories(): Promise<Category[]> {
+  if (isElectron()) {
+    const { getCategories: sqliteGet } = await import('@/lib/db/queries/products')
+    return sqliteGet()
+  }
+
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('categories')

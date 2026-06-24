@@ -1,3 +1,4 @@
+import 'server-only'
 import type { CashCloseSummary } from '@/lib/queries/cash-close'
 import { formatCurrency, PAYMENT_LABELS } from '@/lib/utils/format'
 import { formatBRDateTime } from '@/lib/utils/datetime'
@@ -23,6 +24,15 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;')
 }
 
+export interface BuildCashCloseEmailOptions {
+  /**
+   * Partial report sent mid-day on demand (the "Enviar agora" button) instead
+   * of the end-of-day cron. Only changes user-facing wording — the numbers are
+   * still "sales so far today".
+   */
+  partial?: boolean
+}
+
 /**
  * Builds the daily cash-close report email (subject + HTML + plain text).
  * Pure function — no I/O — so it's easy to unit-test the content.
@@ -30,9 +40,14 @@ function escapeHtml(value: string): string {
 export function buildCashCloseEmail(
   summary: CashCloseSummary,
   storeName = 'VendasApp',
+  options: BuildCashCloseEmailOptions = {},
 ): BuiltEmail {
   const dayLabel = formatDayLabel(summary.date)
-  const subject = `${storeName} — Fechamento de ${dayLabel}: ${formatCurrency(summary.total)} em ${summary.count} ${summary.count === 1 ? 'venda' : 'vendas'}`
+  const partial = options.partial ?? false
+  const reportNoun = partial ? 'Parcial' : 'Fechamento'
+  const heading = partial ? 'Vendas do dia (parcial)' : 'Fechamento de caixa'
+  const generatedLabel = partial ? 'Relatório parcial gerado' : 'Relatório automático gerado'
+  const subject = `${storeName} — ${reportNoun} de ${dayLabel}: ${formatCurrency(summary.total)} em ${summary.count} ${summary.count === 1 ? 'venda' : 'vendas'}`
 
   const byPaymentRowsHtml = summary.byPayment
     .map(
@@ -47,7 +62,7 @@ export function buildCashCloseEmail(
 
   const html = `<!doctype html>
 <html lang="pt-BR"><body style="font-family:Arial,Helvetica,sans-serif;color:#0f172a;max-width:560px;margin:0 auto;padding:16px;">
-  <h2 style="margin:0 0 4px;">Fechamento de caixa</h2>
+  <h2 style="margin:0 0 4px;">${escapeHtml(heading)}</h2>
   <p style="margin:0 0 16px;color:#64748b;">${escapeHtml(storeName)} · ${dayLabel}</p>
 
   <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
@@ -74,12 +89,12 @@ export function buildCashCloseEmail(
   </table>
 
   <p style="margin:20px 0 0;font-size:12px;color:#94a3b8;">
-    Relatório automático gerado em ${escapeHtml(formatBRDateTime(new Date()))}.
+    ${escapeHtml(generatedLabel)} em ${escapeHtml(formatBRDateTime(new Date()))}.
   </p>
 </body></html>`
 
   const textLines = [
-    `${storeName} — Fechamento de caixa · ${dayLabel}`,
+    `${storeName} — ${heading} · ${dayLabel}`,
     '',
     `Total do dia: ${formatCurrency(summary.total)}`,
     `Vendas: ${summary.count}`,

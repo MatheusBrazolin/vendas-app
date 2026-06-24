@@ -1,14 +1,11 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, JetBrains_Mono } from 'next/font/google'
+import { Inter, JetBrains_Mono, Poppins } from 'next/font/google'
+import { cookies } from 'next/headers'
 import { Toaster } from 'sonner'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register'
 import './globals.css'
 
-/**
- * UI body font — variable weight, supports tnum/ss03 for tabular numbers
- * and a friendlier single-story "a". Covers Portuguese accents via latin-ext.
- */
 const inter = Inter({
   variable: '--font-sans',
   subsets: ['latin', 'latin-ext'],
@@ -16,10 +13,6 @@ const inter = Inter({
   weight: ['400', '500', '600', '700', '800'],
 })
 
-/**
- * Monospace font for product codes, IDs and printed receipts.
- * Wider, more readable than the default monospace stack.
- */
 const jetBrainsMono = JetBrains_Mono({
   variable: '--font-mono',
   subsets: ['latin'],
@@ -27,54 +20,68 @@ const jetBrainsMono = JetBrains_Mono({
   weight: ['400', '500', '600'],
 })
 
+const poppins = Poppins({
+  variable: '--font-poppins',
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['600', '700', '800'],
+})
+
 export const metadata: Metadata = {
-  title: 'VendasApp — Gestão de Vendas',
-  description: 'Sistema de gestão de vendas e estoque',
-  applicationName: 'VendasApp',
+  metadataBase: new URL('https://nexsales-pdv.vercel.app'),
+  title: 'NexSales — Smart Sales Platform',
+  description: 'Plataforma moderna de gestão de vendas, clientes e performance do seu negócio.',
+  applicationName: 'NexSales',
+  keywords: ['PDV', 'ponto de venda', 'gestão de vendas', 'clientes', 'relatórios', 'NexSales'],
+  authors: [{ name: 'NexSales' }],
+  openGraph: {
+    type: 'website',
+    locale: 'pt_BR',
+    title: 'NexSales — Smart Sales Platform',
+    description: 'Plataforma moderna de gestão de vendas, clientes e performance do seu negócio.',
+    siteName: 'NexSales',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'NexSales — Smart Sales Platform',
+    description: 'Plataforma moderna de gestão de vendas, clientes e performance do seu negócio.',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'VendasApp',
+    title: 'NexSales',
   },
-  // The web manifest is auto-linked by Next.js from `app/manifest.ts`,
-  // but we still declare apple-touch-icon explicitly because iOS doesn't
-  // read it from the manifest.
   icons: {
+    icon: [
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
     apple: '/apple-touch-icon.png',
   },
 }
 
-// The theme-color drives the OS chrome (status bar / titlebar) when the
-// app is installed as a PWA. Matches the dark sidebar so the installed
-// app feels cohesive top-to-bottom.
 export const viewport: Viewport = {
   themeColor: '#0f172a',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const cookieStore = await cookies()
+  const theme = cookieStore.get('theme')?.value
+  const isDark = theme === 'dark'
+
   return (
     <html
       lang="pt-BR"
-      className={`${inter.variable} ${jetBrainsMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={`${inter.variable} ${jetBrainsMono.variable} ${poppins.variable} h-full antialiased${isDark ? ' dark' : ''}`}
     >
-      <head>
-        {/*
-          Capture `beforeinstallprompt` as early as possible. Chromium fires it
-          during initial load — often before React mounts — so a listener added
-          inside a component's effect misses it and the install button never
-          appears. We stash the event globally and re-dispatch a custom event
-          the InstallButton can pick up whenever it mounts.
-        */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__bip=e;window.dispatchEvent(new Event('bipready'));});window.addEventListener('appinstalled',function(){window.__bip=null;});`,
-          }}
-        />
-      </head>
       <body className="min-h-full flex flex-col font-sans">
         {children}
         <Toaster richColors position="top-right" />

@@ -1,13 +1,13 @@
 <div align="center">
 
-<img src="public/icon-192.png" alt="VendasApp" width="96" height="96" />
+<img src="public/icon-192.png" alt="NexSales" width="96" height="96" />
 
-# VendasApp
+# NexSales
 
-**Sistema de gestão de vendas e PDV instalável como PWA, construído com Next.js 16 + Supabase.**
+**PDV e gestão de vendas para pequenos comércios — offline-first, PWA + app Windows.**
 
 [![CI](https://github.com/MatheusBrazolin/vendas-app/actions/workflows/ci.yml/badge.svg)](https://github.com/MatheusBrazolin/vendas-app/actions/workflows/ci.yml)
-[![Live demo](https://img.shields.io/badge/live-vendas--app--topaz.vercel.app-2563eb?style=flat-square)](https://vendas-app-topaz.vercel.app)
+[![Live demo](https://img.shields.io/badge/demo-nexsales--pdv.vercel.app-6d28d9?style=flat-square)](https://nexsales-pdv.vercel.app)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Auth-3ecf8e?style=flat-square&logo=supabase)](https://supabase.com/)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
@@ -16,7 +16,7 @@
 
 ---
 
-PDV de balcão para pequenos comércios: leitor USB de código de barras, baixa automática de estoque, cálculo de troco, cadastro de produtos via APIs de barcode públicas com cache permanente e controle de papéis (admin × funcionário). Funciona **offline-first** — registra vendas mesmo sem internet e sincroniza ao reconectar — e pode rodar como **PWA** no navegador/celular ou como **app desktop instalável** no Windows.
+Sistema completo de ponto de venda para pequenos comércios: leitor USB de código de barras, controle de estoque, fiado (crédito de loja), relatório diário por e-mail, painel administrativo e suporte offline. Roda no navegador como **PWA** ou como **app desktop instalável no Windows** — após o primeiro login, continua funcionando mesmo sem internet.
 
 ## Índice
 
@@ -25,30 +25,66 @@ PDV de balcão para pequenos comércios: leitor USB de código de barras, baixa 
 - [Rodando localmente](#-rodando-localmente)
 - [Deploy](#-deploy)
 - [App Desktop (Windows)](#-app-desktop-windows)
-- [Relatório diário por email](#-relatório-diário-por-email)
+- [Relatório diário por e-mail](#-relatório-diário-por-e-mail)
 - [Como o offline funciona](#-como-o-offline-funciona)
-- [Estrutura](#-estrutura)
+- [Estrutura do projeto](#-estrutura-do-projeto)
 - [Testes](#-testes)
 - [Cache de código de barras](#-cache-de-código-de-barras)
 - [Segurança](#-segurança)
 - [Roadmap](#-roadmap)
 - [Licença](#-licença)
 
+---
+
 ## ✨ Funcionalidades
 
-- **PDV (Ponto de Venda)** com leitor USB, busca inteligente por nome ou código, carrinho com ajuste de quantidade, métodos de pagamento (Dinheiro, PIX, Crédito, Débito) e **calculadora de troco** automática quando o pagamento é em dinheiro.
-- **Cadastro de produtos** com auto-preenchimento via código de barras: ao escanear um EAN/UPC, busca nome e descrição em [Cosmos (Bluesoft)](https://cosmos.bluesoft.com.br/), [Open Food Facts](https://world.openfoodfacts.org/) e [UPCitemdb](https://www.upcitemdb.com/) — com **cache permanente** que garante que cada código consome no máximo uma consulta de API na vida toda.
-- **Controle de papéis** via tabela `user_roles`: `admin` (acesso total ao Dashboard, Produtos, Categorias, Usuários, cancelamento de vendas) e `employee` (apenas o PDV e as vendas **do dia** — sem acesso ao histórico completo nem a relatórios antigos). A trava é feita no servidor, então não dá para burlar pela URL.
-- **Cancelamento de venda** restrito a admins, com restauração atômica de estoque via função Postgres.
-- **Baixa automática de estoque** ao confirmar a venda, com bloqueio se o estoque ficar negativo.
-- **Dashboard** com KPIs, gráfico de vendas, top produtos, últimas vendas e alerta de produtos com estoque baixo.
-- **Funciona offline (offline-first)** — o catálogo é cacheado em IndexedDB e o PDV registra vendas mesmo sem internet, guardando-as numa fila local. Ao reconectar, as vendas são reenviadas ao servidor de forma **idempotente** (chave `client_uuid`), e conflitos de estoque viram vendas "rejeitadas" para revisão manual. Um **indicador vermelho** aparece no canto quando a conexão cai.
-- **Recibo térmico (80mm)** — impressão do recibo da venda direto pela página do recibo (online) e também **offline**, a partir do carrinho, com marca de "provisório" até a venda sincronizar.
-- **Relatório diário de fechamento por email** — todo dia, em horário fixo, um resumo do caixa (total, ticket médio, quebra por forma de pagamento) é enviado por email aos administradores. Os destinatários são gerenciáveis por uma tela admin.
-- **PWA instalável** — manifesto + Service Worker permitem instalar o app no PC ou celular, com ícone próprio, janela standalone e atalho na área de trabalho.
-- **App desktop para Windows** — instalador `.exe` (Electron) para o caixa ter um funcionamento fixo que resiste a quedas de internet. Baixável por uma página admin no próprio site.
-- **Autenticação** via Supabase Auth com **RLS** habilitado em todas as tabelas e middleware Next.js validando a sessão server-side.
-- **Layout responsivo** com sidebar fixa no desktop e drawer hambúrguer no mobile.
+### Ponto de Venda (PDV)
+- Busca de produtos por **nome ou código de barras** (leitor USB ou câmera)
+- Carrinho com ajuste de quantidade e **substituição de preço por item** (promoções e correções)
+- Métodos de pagamento: **Dinheiro, PIX, Crédito, Débito e Fiado**
+- **Calculadora de troco** automática para pagamentos em dinheiro
+- Baixa automática de estoque ao confirmar a venda; bloqueio se o saldo ficar negativo
+
+### Fiado (crédito de loja)
+- Cadastro de clientes com nome, telefone e observações
+- Vinculação de vendas a clientes com método "Fiado"
+- Tela de **saldo devedor por cliente** com histórico de vendas a prazo e registro de pagamentos
+- Recibo de pagamento de dívida imprimível
+
+### Produtos e estoque
+- CRUD completo de produtos e categorias
+- **Auto-preenchimento via código de barras** — ao escanear um EAN/UPC, busca nome e descrição em Cosmos (Bluesoft), Open Food Facts e UPCitemdb, com **cache permanente** no banco (cada código nunca consome mais de uma consulta externa)
+- Alerta de estoque baixo no Dashboard e no sidebar
+
+### Controle de acesso
+- Dois papéis: **Admin** (acesso total) e **Funcionário** (apenas PDV e vendas do próprio dia)
+- Trava implementada no servidor — impossível contornar pela URL
+- **Cancelamento de venda** restrito a admins, com restauração atômica de estoque via função PostgreSQL
+
+### Dashboard e relatórios
+- KPIs: total do dia, total do mês, ticket médio, alertas de estoque baixo
+- Gráfico de vendas dos últimos 30 dias
+- Top produtos por quantidade vendida e últimas vendas
+- **Relatório de lucro** com análise por período (admin)
+
+### Offline-first
+- Catálogo de produtos cacheado em **IndexedDB** (Dexie) — PDV funciona sem internet
+- Vendas registradas em fila local durante quedas de conexão e sincronizadas ao reconectar
+- Replay idempotente com `client_uuid` — reenvios nunca geram vendas duplicadas
+- Indicador visual de conexão + contador de vendas pendentes
+
+### Recibo térmico
+- Impressão de recibo **80mm** diretamente pelo navegador
+- Disponível online (página da venda) e **offline** (carrinho), com marca-d'água "provisório" até a sincronização
+
+### Outros
+- **Dark mode** com toggle no sidebar e persistência via cookie
+- Layout **mobile-first** com drawer hambúrguer no celular
+- **PWA instalável** — manifesto + Service Worker, ícone próprio e janela standalone
+- **App desktop para Windows** — instalador `.exe` (Electron) para uso fixo no caixa
+- **Relatório diário de fechamento por e-mail** via Vercel Cron + SMTP
+
+---
 
 ## 🛠️ Stack
 
@@ -56,28 +92,30 @@ PDV de balcão para pequenos comércios: leitor USB de código de barras, baixa 
 |---|---|
 | Framework | [Next.js 16](https://nextjs.org/) (App Router, Server Components, Server Actions, Turbopack) |
 | Linguagem | TypeScript |
-| UI | [Base UI](https://base-ui.com/) + Tailwind CSS v4 |
+| UI | Tailwind CSS v4 + shadcn/ui + framer-motion |
 | Banco e Auth | [Supabase](https://supabase.com/) (PostgreSQL + Auth + RLS), região `sa-east-1` (São Paulo) |
-| Hospedagem | [Vercel](https://vercel.com) (Hobby), funções em `gru1` (São Paulo) |
+| Hospedagem | [Vercel](https://vercel.com) (funções em `gru1` — São Paulo) |
 | Validação | [Zod](https://zod.dev/) v4 |
 | Formulários | React Hook Form |
 | Gráficos | Recharts |
-| Toasts | Sonner |
+| Notificações | Sonner |
 | Ícones | Lucide React |
-| PWA | Manifest API do Next.js + Service Worker próprio em `public/sw.js` |
+| PWA | Manifest API do Next.js + Service Worker próprio (`public/sw.js`) |
 | Offline | [Dexie](https://dexie.org/) (IndexedDB) — cache de leitura + fila de vendas |
 | Desktop | [Electron](https://www.electronjs.org/) + electron-builder (instalador NSIS) |
-| Email | [Nodemailer](https://nodemailer.com/) (SMTP) + [Vercel Cron](https://vercel.com/docs/cron-jobs) (relatório diário) |
+| E-mail | [Nodemailer](https://nodemailer.com/) (SMTP) + [Vercel Cron](https://vercel.com/docs/cron-jobs) |
 | Testes | [Vitest](https://vitest.dev/) + Testing Library + fake-indexeddb |
-| CI | GitHub Actions (typecheck + testes + build a cada push) |
+| CI | GitHub Actions — typecheck + testes + build a cada push |
+
+---
 
 ## 🚀 Rodando localmente
 
 ### Pré-requisitos
 
 - Node.js 20+
-- Conta no [Supabase](https://supabase.com/) (free tier funciona; crie o projeto em **South America (São Paulo)** para latência baixa)
-- Opcional: token gratuito do [Cosmos Bluesoft](https://cosmos.bluesoft.com.br/) para lookup de produtos brasileiros
+- Conta no [Supabase](https://supabase.com/) (free tier funciona; crie em **South America — São Paulo** para melhor latência)
+- Opcional: token do [Cosmos Bluesoft](https://cosmos.bluesoft.com.br/) para lookup de produtos brasileiros
 
 ### Setup
 
@@ -85,205 +123,200 @@ PDV de balcão para pequenos comércios: leitor USB de código de barras, baixa 
 git clone https://github.com/MatheusBrazolin/vendas-app.git
 cd vendas-app
 npm install
-cp .env.example .env.local      # edite com seus valores
-npm run dev                     # http://localhost:3000
+cp .env.example .env.local   # edite com seus valores
+npm run dev                  # http://localhost:3000
 ```
 
 ### Variáveis de ambiente
 
 ```env
+# Supabase (obrigatório)
 NEXT_PUBLIC_SUPABASE_URL=https://seuprojeto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
-COSMOS_API_TOKEN=               # opcional
 
-# Relatório diário por email (opcional — só se quiser o envio automático)
-CRON_SECRET=                    # segredo que protege a rota do cron
+# Barcode lookup (opcional)
+COSMOS_API_TOKEN=
+
+# Relatório diário por e-mail (opcional)
+CRON_SECRET=          # segredo que protege a rota do cron
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=465
 SMTP_USER=seuemail@gmail.com
-SMTP_PASS=                      # senha de app (Gmail), não a senha normal
-SMTP_FROM=VendasApp <seuemail@gmail.com>
-REPORT_EMAIL=                   # destinatário(s) garantido(s), separados por vírgula
+SMTP_PASS=            # senha de app do Gmail, não a senha normal
+SMTP_FROM=NexSales <seuemail@gmail.com>
+REPORT_EMAIL=         # destinatário(s) fixo(s), separados por vírgula
 ```
 
 ### Migrations do banco
 
-No painel do Supabase, abra o **SQL Editor** e execute na ordem cronológica (prefixo do nome do arquivo):
+No painel do Supabase, abra o **SQL Editor** e execute os arquivos em `supabase/migrations/` **na ordem numérica**:
 
 ```
-supabase/migrations/
-├── 001_initial_schema.sql              tabelas core + RPC create_sale_with_items
-├── 20260525000000_barcode_cache.sql    cache de lookups de barcode
-├── 20260526000000_user_roles.sql       roles admin/employee + trigger de signup
-├── 20260527000000_profiles.sql         nomes/avatar dos usuários
-├── 20260528000000_cancel_sale.sql      RPC de cancelamento atômico
-├── 20260603000000_offline_sales.sql    client_uuid + RPC idempotente (vendas offline)
-└── 20260609000000_report_recipients.sql  destinatários do relatório por email (admin)
+001_initial_schema.sql                          tabelas core + RPC create_sale_with_items
+20260525000000_barcode_cache.sql                cache permanente de lookups por EAN/UPC
+20260526000000_user_roles.sql                   papéis admin/funcionário + trigger de signup
+20260527000000_profiles.sql                     nomes e avatar dos usuários
+20260528000000_cancel_sale.sql                  RPC de cancelamento atômico
+20260603000000_offline_sales.sql                client_uuid + RPC idempotente (offline)
+20260609000000_report_recipients.sql            destinatários do relatório por e-mail
+20260611000000_fiado.sql                        clientes, fiado e saldo devedor
+20260615000000_customer_balances_v2.sql         view de saldo por cliente (v2)
+20260615000001_price_override.sql               substituição de preço por item no PDV
+20260615000002_fix_customer_balances_cartesian.sql  correção da view de saldos
+20260615000003_fix_price_override_nullif.sql        correção no nullif do override
 ```
+
+---
 
 ## 🌐 Deploy
 
-O app está em produção em **[vendas-app-topaz.vercel.app](https://vendas-app-topaz.vercel.app)**. A configuração da Vercel está em [`vercel.json`](vercel.json) — funções serverless rodam em `gru1` (São Paulo) para manter latência baixa quando combinado com Supabase em `sa-east-1`.
+O app está em produção em **[nexsales-pdv.vercel.app](https://nexsales-pdv.vercel.app)**. As funções serverless rodam em `gru1` (São Paulo) para manter latência baixa junto ao Supabase em `sa-east-1`.
 
-Para deployar a sua própria cópia:
+Para subir sua própria instância:
 
-1. Fork o repo
-2. `vercel.com/new` → import → selecione seu fork
-3. Em **Environment Variables**, adicione `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` (opcionalmente as variáveis de email — ver [Relatório diário por email](#-relatório-diário-por-email))
-4. Deploy
+1. Faça fork do repositório
+2. Importe em [vercel.com/new](https://vercel.com/new)
+3. Adicione as variáveis de ambiente obrigatórias (e opcionalmente as de e-mail)
+4. Clique em **Deploy**
+
+---
 
 ## 💻 App Desktop (Windows)
 
-Além do acesso pelo navegador (que o dono usa no **celular** para acompanhar as
-vendas), há um **app instalável para Windows** — ideal para o caixa/PDV ter um
-funcionamento fixo que continua operando se a internet cair.
+Além do acesso pelo navegador, há um **instalador `.exe` para Windows** — ideal para o caixa ter um funcionamento fixo que continua operando se a internet cair.
 
-É um shell Electron ([`electron/main.cjs`](electron/main.cjs)) que abre a versão
-publicada numa janela própria. Como o Electron embute o Chromium, o **service
-worker e o cache offline** (IndexedDB) funcionam igual ao Chrome: após o primeiro
-acesso online (necessário para logar e cachear), o app continua funcionando sem
-internet, com as vendas enfileiradas localmente e sincronizadas ao reconectar.
+É um shell Electron ([`electron/main.cjs`](electron/main.cjs)) que abre a versão publicada em janela própria. Como embute o Chromium, o **Service Worker e o cache offline** funcionam normalmente: após o primeiro acesso online (necessário para login), o app continua vendendo sem internet, com as vendas sincronizadas ao reconectar.
 
 ```bash
-# Rodar o app desktop em modo dev (abre uma janela; aponta para produção)
+# Rodar em modo dev (abre uma janela; aponta para produção)
 npm run desktop
 
-# Apontar para um servidor local durante o desenvolvimento
-# (PowerShell)  $env:VENDAS_APP_URL="http://localhost:3000"; npm run desktop
+# Apontar para servidor local (PowerShell)
+$env:NEXSALES_APP_URL="http://localhost:3000"; npm run desktop
 
-# Gerar o instalador → pasta instalador/VendasApp-Instalador.exe
+# Gerar instalador → instalador/NexSales-Instalador.exe
 npm run desktop:build
 ```
 
-O `npm run desktop:build` cria a pasta **`instalador/`** na raiz do projeto. É ali
-que fica o arquivo de instalação: **`instalador/VendasApp-Instalador.exe`**.
-Esse `.exe` é autocontido — copie-o para qualquer PC Windows e dê duplo-clique para
-instalar (não precisa de Node nem nada). A pasta `instalador/` é ignorada pelo git.
+### Disponibilizar o download no site
 
-### Disponibilizar o download no site (admin)
+A página **`/configuracoes/baixar`** (menu Administração — visível apenas no desktop e para admins) exibe o botão de download, que aponta para o GitHub Releases:
 
-Há uma página **admin** em **`/configuracoes/baixar`** (no menu "Administração")
-com o botão de baixar — visível só para administradores e oculta dentro do próprio
-app desktop. Ela aponta para o instalador hospedado no **GitHub Releases**:
+1. Gere o instalador com `npm run desktop:build`
+2. Crie um **Release** no GitHub e anexe `NexSales-Instalador.exe` como asset
+3. O botão usa a URL estável do último release; ao publicar uma nova versão com o mesmo nome de arquivo, o download é atualizado automaticamente
 
-1. Gere o `.exe` (`npm run desktop:build`).
-2. No GitHub, crie um **Release** no repo e suba `instalador/VendasApp-Instalador.exe`
-   como *asset* (mantenha exatamente esse nome).
-3. Pronto — o botão usa a URL estável de "último release":
-   `…/releases/latest/download/VendasApp-Instalador.exe`. A cada novo release com o
-   mesmo nome de arquivo, o botão passa a baixar a versão nova sem mexer no código.
+Para hospedar em outro lugar, defina `NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL`.
 
-Para hospedar o `.exe` em outro lugar, defina `NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL`.
+> **Build no Windows:** o `electron-builder` precisa criar symlinks ao extrair o `winCodeSign`. Se ocorrer erro de permissão, ative o **Modo Desenvolvedor** em *Configurações → Privacidade → Para desenvolvedores* ou execute o terminal como Administrador.
 
-> **Login offline:** a autenticação é do Supabase e exige rede. O cenário coberto é
-> "estava logado e a internet caiu" — aí tudo continua funcionando. Um *cold start*
-> totalmente offline (app fechado + sem rede + sessão expirada) exigiria login, que
-> não funciona sem conexão.
+> **Login offline:** a autenticação é feita pelo Supabase e exige conexão. O cenário coberto é "estava logado e a internet caiu". Um cold start completamente offline com sessão expirada ainda requer rede para autenticar.
 
-> **Build no Windows — erro de symlink:** o `electron-builder` extrai a ferramenta
-> `winCodeSign`, que contém symlinks de macOS e falha sem privilégio
-> (`Cannot create symbolic link`). Soluções: ativar o **Modo de Desenvolvedor** do
-> Windows *(Configurações → Privacidade e segurança → Para desenvolvedores)* **ou**
-> rodar o terminal como **Administrador**, e então `npm run desktop:build`. O
-> instalador gerado é **não-assinado** (o SmartScreen mostra um aviso na 1ª execução
-> → "Mais informações" → "Executar assim mesmo").
+---
 
-## 📧 Relatório diário por email
+## 📧 Relatório diário por e-mail
 
-Todo dia, às **20h (horário de Brasília)**, o sistema envia por email um **resumo do fechamento de caixa** do dia — total, número de vendas, ticket médio e quebra por forma de pagamento.
+Todo dia às **20h (horário de Brasília)** o sistema envia um resumo do fechamento de caixa: total, número de vendas, ticket médio e breakdown por forma de pagamento.
 
-Como funciona:
+**Como funciona:**
 
-- Um **Vercel Cron** (configurado em [`vercel.json`](vercel.json) — `0 23 * * *` UTC = 20h BRT) chama a rota protegida [`/api/cron/daily-cash-close`](src/app/api/cron/daily-cash-close/route.ts).
-- A rota só roda com o header `Authorization: Bearer $CRON_SECRET` (a Vercel envia automaticamente). Sem o segredo → 401.
-- O resumo é montado pela mesma query do "Fechar caixa" (via service-role, sem sessão de usuário) e o email é enviado por **SMTP** (Nodemailer).
+- Um **Vercel Cron** (`0 23 * * *` UTC = 20h BRT) chama a rota protegida [`/api/cron/daily-cash-close`](src/app/api/cron/daily-cash-close/route.ts)
+- A rota exige o header `Authorization: Bearer $CRON_SECRET` (enviado automaticamente pela Vercel)
+- O resumo é montado via service-role (sem sessão de usuário) e enviado por SMTP (Nodemailer)
 
-**Quem recebe** é a união de três fontes (deduplicadas, ignorando emails internos `@vendas-app.interno`):
+**Quem recebe** (deduplicado, sem e-mails internos):
 
-1. Administradores cujo login é um **email real**;
-2. A env `REPORT_EMAIL` (um ou vários, separados por vírgula);
-3. Emails ativos cadastrados na tela admin **`/configuracoes/relatorio`**.
+1. Administradores com e-mail real
+2. Endereços definidos em `REPORT_EMAIL`
+3. E-mails ativos cadastrados em **`/configuracoes/relatorio`**
 
-A tela de destinatários permite adicionar, ativar/desativar e remover endereços — útil quando há **mais de um admin** ou quando se quer mandar para o contador, por exemplo. Contas criadas no app logam por usuário (sem caixa de entrada real), por isso o `REPORT_EMAIL` garante a entrega ao dono.
+A tela de destinatários permite adicionar, ativar/desativar e remover endereços sem precisar alterar variáveis de ambiente.
 
-> **Configuração:** defina `CRON_SECRET`, as variáveis `SMTP_*` e `REPORT_EMAIL` no ambiente (local em `.env.local`, produção nas *Environment Variables* da Vercel). Para Gmail, use uma **senha de app** (não a senha normal).
+---
 
 ## 🔌 Como o offline funciona
 
-O servidor (Supabase) é sempre a fonte da verdade; o offline é **otimista** e reconcilia ao reconectar.
+O servidor (Supabase) é sempre a fonte de verdade; o offline é **otimista** e reconcilia ao reconectar.
 
 ```
-LEITURA                          ESCRITA (venda)
-SyncProvider sincroniza          Online?
-products/categorias para         ├─ sim → cria no servidor (RPC)
-IndexedDB (Dexie) em cada        │         └─ falha de rede → cai p/ fila
-reconexão / foco.                └─ não → grava na fila local (IndexedDB)
-PDV lê do cache local →                    e baixa o estoque local (otimista)
-funciona com ou sem internet.
-                                 Ao reconectar, flushPendingSales():
-                                 • reenvia cada venda com seu client_uuid
-                                   (idempotente — reenvio nunca duplica)
-                                 • sucesso → remove da fila + re-sincroniza estoque
-                                 • estoque insuficiente → marca "rejeitada"
-                                   p/ revisão manual (não descarta nem repete)
+LEITURA                              ESCRITA (PDV)
+─────────────────────────────────    ─────────────────────────────────────
+SyncProvider sincroniza produtos     Online?
+e categorias para IndexedDB          ├─ sim  → cria venda no servidor (RPC)
+em cada reconexão / foco de aba.     │         falha de rede → cai p/ fila
+PDV lê do cache local →              └─ não  → grava na fila (IndexedDB)
+funciona com ou sem internet.                  baixa estoque local (otimista)
+
+                                     Ao reconectar — flushPendingSales():
+                                     • reenvia cada venda com client_uuid
+                                       (idempotente — nunca cria duplicata)
+                                     • sucesso → remove da fila + re-sync
+                                     • estoque insuficiente → marca "rejeitada"
+                                       para revisão manual (não descarta)
 ```
 
-Decisões-chave:
+**Decisões-chave:**
 
-- **Idempotência:** cada venda carrega um `client_uuid` único; a RPC `create_sale_with_items` devolve a venda existente se o UUID já foi gravado, então um reenvio após falha parcial nunca cria duplicata.
-- **Conflito de estoque entre dispositivos:** como o offline é otimista, dois caixas podem vender o mesmo item sem rede. O servidor rejeita o segundo na sincronização (`insufficient_stock`) e a venda vira `rejeitada` para o admin resolver — em vez de furar o estoque silenciosamente.
-- **Limite conhecido:** *login* exige rede (é o Supabase Auth). O cenário coberto é "estava logado e a internet caiu".
+- **Idempotência:** a RPC `create_sale_with_items` devolve a venda existente se o `client_uuid` já foi gravado — reenvios após falha parcial nunca criam duplicatas
+- **Conflito de estoque entre caixas:** dois caixas offline podem vender o mesmo item. O servidor rejeita o segundo na sincronização (`insufficient_stock`), marcando a venda como `rejeitada` para o admin resolver — sem furar o estoque silenciosamente
 
-## 📂 Estrutura
+---
+
+## 📂 Estrutura do projeto
 
 ```
 src/
 ├── app/
-│   ├── (auth)/             /login, recuperação de senha (cadastro público desativado)
+│   ├── (auth)/             /login, recuperação de senha
 │   ├── (dashboard)/        área autenticada
-│   │   ├── dashboard/      KPIs e visão geral (admin)
+│   │   ├── clientes/       cadastro de clientes e controle de fiado
+│   │   ├── configuracoes/  usuários, baixar app, destinatários do relatório (admin)
+│   │   ├── dashboard/      KPIs, gráfico, top produtos, alertas (admin)
 │   │   ├── produtos/       CRUD de produtos e categorias (admin)
-│   │   ├── vendas/         PDV em /nova, histórico (do dia p/ funcionário), recibo, cancelamento
-│   │   ├── configuracoes/  usuários + baixar app + destinatários do relatório (admin)
+│   │   ├── relatorios/     relatório de lucro por período (admin)
+│   │   ├── vendas/         PDV (/nova), histórico, recibo, cancelamento
 │   │   └── layout.tsx
 │   ├── api/cron/           rota do relatório diário (Vercel Cron)
 │   ├── manifest.ts         PWA manifest
-│   └── layout.tsx          root, fontes, toaster, registro do SW
+│   └── layout.tsx          root — fontes, toaster, registro do SW
 ├── components/
-│   ├── dashboard/          widgets de KPI/gráfico/alertas
+│   ├── dashboard/          widgets de KPI, gráfico, alertas de estoque
 │   ├── layout/             sidebar (desktop + mobile drawer), header, breadcrumb
 │   ├── products/           formulário com auto-preenchimento por barcode
-│   ├── sales/              busca de produto no PDV, carrinho, cancelar venda
+│   ├── sales/              PDV, carrinho, cancelar venda, recibo
 │   ├── pwa/                SW register, botão instalar, indicador offline,
-│   │                        sync provider, badge de vendas pendentes
-│   └── ui/                 primitivos de UI (Base UI)
-├── hooks/                  React hooks (use-debounce)
+│   │                        SyncProvider, badge de vendas pendentes
+│   └── ui/                 primitivos de UI (shadcn/ui)
+├── hooks/                  hooks React utilitários
 ├── lib/
-│   ├── auth/roles.ts       getCurrentUser, requireAdmin, etc.
+│   ├── auth/roles.ts       getCurrentUser, requireAdmin, isAdmin
 │   ├── barcode/lookup.ts   Cosmos → Open Food Facts → UPCitemdb + cache
-│   ├── email/              mailer SMTP, builder do relatório, resolução de destinatários
-│   ├── offline/            cache IndexedDB (Dexie), sync, fila de vendas offline
+│   ├── email/              mailer SMTP, builder do relatório, destinatários
+│   ├── offline/            cache IndexedDB (Dexie), sync, fila de vendas
 │   ├── queries/            consultas tipadas ao Supabase
-│   ├── supabase/           clients de server/client/middleware
-│   ├── utils/              format, datetime (BRT), receipt, print-receipt (recibo offline)
+│   ├── supabase/           clients (server / client / middleware / service)
+│   ├── utils/              format, datetime (BRT), receipt, print-receipt
 │   └── validations/        schemas Zod
-└── types/database.ts       tipos gerados a partir do schema
+└── types/database.ts       tipos gerados a partir do schema Supabase
 electron/
-├── main.cjs                shell desktop (Windows) que abre o app publicado
-└── icon.png                ícone do instalador
+├── main.cjs                shell desktop que carrega o app publicado
+└── icon.png                ícone do instalador Windows
 public/
-├── icon-*.png              ícones do PWA (gerados por scripts/generate-pwa-icons.mjs)
+├── icon-*.png              ícones PWA
 ├── sw.js                   Service Worker
 └── icon-source.svg         SVG-fonte dos ícones
+supabase/migrations/        migrations SQL em ordem cronológica
 scripts/
 └── generate-pwa-icons.mjs  gera os PNGs do PWA a partir do SVG-fonte
 ```
 
+---
+
 ## 🧪 Testes
 
-Testes unitários com **Vitest** (+ jsdom e `fake-indexeddb` para a camada offline).
-Os testes ficam ao lado do código que cobrem (`*.test.ts`).
+Testes unitários com **Vitest** + jsdom + `fake-indexeddb` para a camada offline.  
+Os arquivos de teste ficam ao lado do código que cobrem (`*.test.ts`).
 
 ```bash
 npm test              # roda toda a suíte uma vez
@@ -291,59 +324,72 @@ npm run test:watch    # modo watch durante o desenvolvimento
 npm run test:coverage # relatório de cobertura
 ```
 
-A prioridade é a **lógica de risco**, não cobrir tudo às cegas:
-
 | Área | O que é verificado |
 |------|--------------------|
-| `lib/validations` | Schemas Zod (login, funcionário, produto, categoria) — 100% |
-| `lib/offline/sales-repo` | Fila offline: baixa otimista de estoque, idempotência (`client_uuid`), erro terminal × transitório, guarda offline |
-| `lib/offline/products-repo` | Busca offline por nome/código, filtro de inativos/sem estoque |
+| `lib/validations` | Schemas Zod (login, funcionário, produto, categoria) |
+| `lib/offline/sales-repo` | Fila offline: baixa otimista, idempotência via `client_uuid`, erro terminal × transitório |
+| `lib/offline/products-repo` | Busca por nome/código, filtro de inativos e sem estoque |
 | `vendas/actions` | `createSale`: mapeamento de erros do servidor para mensagem + código |
 | `lib/utils/format` | Moeda (BRL), datas, rótulos de pagamento |
 | `lib/utils/print-receipt` | Recibo 80mm: conteúdo, marca "provisório", escape de HTML |
-| `lib/email/cash-close-email` | Assunto/HTML/texto do relatório; singular/plural; dia vazio |
+| `lib/email/cash-close-email` | Assunto, HTML e texto do relatório; singular/plural; dia vazio |
 | `lib/email/report-recipients` | Merge das 3 fontes de destinatários, dedupe, filtro de internos |
 
-UI e *waterfalls* de dados ficam para testes E2E (Playwright) numa etapa futura.
+> Módulos marcados com `server-only` são neutralizados por um stub no `vitest.config.mts`, sem configuração adicional nos arquivos de teste.
+
+UI e fluxos completos estão mapeados para testes E2E (Playwright) em etapa futura.
+
+---
 
 ## 🧠 Cache de código de barras
 
 ```
-[1] Já está em products?              → toast "Já cadastrado"
+[1] Produto já cadastrado?     → avisa e descarta
        ↓ não
-[2] Já está em barcode_cache?         → reusa, ZERO consultas externas
+[2] Código em barcode_cache?   → reusa (zero consultas externas)
        ↓ não
 [3] Cosmos → Open Food Facts → UPCitemdb
        ↓
-[4] Grava em barcode_cache            → próxima vez é instantânea
+[4] Grava em barcode_cache     → próxima consulta é instantânea
 ```
+
+---
 
 ## 🔐 Segurança
 
-- `.env*` e a pasta `.claude/` no `.gitignore` — segredos e configs de ferramenta nunca sobem ao repositório.
-- **RLS habilitado** em `products`, `categories`, `sales`, `sale_items`, `user_roles`, `profiles`, `barcode_cache`.
-- O layout autenticado valida a sessão no server (`getCurrentUser()`) e redireciona para `/login` antes de qualquer render; páginas admin reforçam com `requireAdmin()`.
-- Cancelamento de venda é admin-only no Node **e** na função Postgres (defense in depth — a RPC levanta 42501 se `is_admin()` for falso).
-- Headers do Service Worker pinados em `next.config.ts` (`Content-Type` correto + `no-cache` para garantir propagação de versões novas).
+- **Secrets fora do repo** — `.env*` e `.claude/` no `.gitignore`
+- **RLS habilitado** em todas as tabelas (`products`, `categories`, `sales`, `sale_items`, `customers`, `user_roles`, `profiles`, `barcode_cache`, `report_recipients`)
+- **Autenticação server-side** — o layout autenticado chama `getCurrentUser()` antes de qualquer render; páginas admin reforçam com `requireAdmin()`
+- **Defense in depth no cancelamento** — restrito a admins no Node.js *e* na função PostgreSQL (`is_admin()` levanta `42501` se falso)
+- **Service Worker sem cache stale** — headers `Content-Type` e `no-cache` configurados em `next.config.ts`
+
+---
 
 ## 🗺️ Roadmap
 
-- [x] PDV com carrinho, métodos de pagamento, validação de campos obrigatórios e calculadora de troco
-- [x] Cancelamento de venda admin-only com restauração atômica de estoque
-- [x] Sidebar responsiva (drawer no mobile)
-- [x] **PWA Fase 1** — instalável no Chrome/Edge/Safari + botão "Instalar app"
-- [x] **PWA Fase 2** — cache de produtos em IndexedDB, leitura offline no PDV
-- [x] **PWA Fase 3** — fila de vendas offline + replay idempotente + conflito de estoque
-- [x] **App desktop Windows** — instalável (.exe) via Electron, com offline
-- [x] **Testes unitários** da lógica crítica (Vitest): fila offline, schemas, createSale
-- [x] **Recibo térmico (80mm)** imprimível online e offline (recibo provisório)
-- [x] **Histórico restrito ao dia** para funcionário (trava no servidor)
-- [x] **Relatório diário de fechamento por email** (Vercel Cron + SMTP) com tela admin de destinatários
-- [ ] Testes E2E (Playwright) do fluxo de venda offline
+- [x] PDV com carrinho, métodos de pagamento e calculadora de troco
+- [x] Cancelamento de venda com restauração atômica de estoque
+- [x] Controle de acesso admin / funcionário (trava no servidor)
+- [x] PWA instalável (manifesto + Service Worker)
+- [x] Cache offline de produtos (IndexedDB via Dexie)
+- [x] Fila de vendas offline + replay idempotente + conflito de estoque
+- [x] App desktop Windows (Electron + NSIS)
+- [x] Recibo térmico 80mm — online e offline (provisório)
+- [x] Relatório diário de fechamento por e-mail (Vercel Cron + SMTP)
+- [x] Tela admin de destinatários do relatório
+- [x] Relatório de lucro por período
+- [x] Fiado — crédito de loja com cadastro de clientes e controle de saldo
+- [x] Substituição de preço por item no PDV
+- [x] Dark mode com toggle e persistência via cookie
+- [x] Layout mobile-first com sidebar responsiva
+- [x] Testes unitários da lógica crítica (Vitest)
+- [ ] Testes E2E (Playwright) do fluxo completo de venda
 - [ ] Emissão de NFC-e via serviço terceirizado
-- [ ] Relatórios exportáveis (CSV/PDF)
-- [ ] Login offline (sessão em cache) para *cold start* sem internet
+- [ ] Exportação de relatórios (CSV / PDF)
+- [ ] Login offline (sessão em cache para cold start sem internet)
+
+---
 
 ## 📜 Licença
 
-[MIT](LICENSE)
+[MIT](LICENSE) © [OTM Tech](https://github.com/MatheusBrazolin)

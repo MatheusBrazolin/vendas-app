@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
@@ -52,7 +52,7 @@ export function CreateEmployeeDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
-        render={<Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm" />}
+        render={<Button className="bg-primary hover:bg-primary/90 text-white shadow-sm" />}
       >
         <UserPlus className="mr-1.5 h-4 w-4" />
         Novo Funcionário
@@ -170,7 +170,7 @@ export function CreateEmployeeDialog() {
             </Button>
             <Button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-primary hover:bg-primary/90 text-white"
               disabled={isPending}
             >
               {isPending ? (

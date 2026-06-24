@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { getTopProducts } from '@/lib/queries/sales'
+import { tryQuery } from '@/lib/supabase/try-query'
 import { TrendingUp } from 'lucide-react'
 
 const RANK_COLORS = [
@@ -11,19 +12,19 @@ const RANK_COLORS = [
 ]
 
 export async function TopProducts() {
-  const products = await getTopProducts(5)
+  const { data: products } = await tryQuery(() => getTopProducts(5), [])
 
   if (products.length === 0) {
     return (
-      <Card className="border-slate-200/80 shadow-sm">
+      <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold text-slate-900 flex items-center gap-2">
+          <CardTitle className="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-green-500" />
             Mais Vendidos
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-slate-400 text-center py-4">Sem dados de vendas ainda.</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-4">Sem dados de vendas ainda.</p>
         </CardContent>
       </Card>
     )
@@ -32,9 +33,9 @@ export async function TopProducts() {
   const max = products[0].total
 
   return (
-    <Card className="border-slate-200/80 shadow-sm">
+    <Card className="border-slate-200/80 dark:border-white/8 dark:bg-slate-800/60 shadow-sm">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold text-slate-900 flex items-center gap-2">
+        <CardTitle className="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
           <TrendingUp className="h-4 w-4 text-green-500" />
           Mais Vendidos
         </CardTitle>
@@ -53,12 +54,12 @@ export async function TopProducts() {
               </span>
               <div className="flex-1 min-w-0 space-y-1">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-slate-900 truncate">{product.name}</p>
-                  <span className="text-xs font-semibold text-slate-700 shrink-0 tabular-nums">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{product.name}</p>
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 shrink-0 tabular-nums">
                     {product.total} un.
                   </span>
                 </div>
-                <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
                   <div
                     className="h-full rounded-full bg-green-500 transition-all"
                     style={{ width: `${pct}%` }}

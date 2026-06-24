@@ -1,3 +1,4 @@
+import 'server-only'
 import { createServiceClient, isInternalEmail } from '@/lib/supabase/service'
 
 /**
@@ -45,17 +46,28 @@ export function pickDeliverableEmails(emails: (string | null | undefined)[]): st
  *
  * `pickDeliverableEmails` dedupes case-insensitively and drops internal/empty
  * addresses, so the three sources can overlap freely.
+ *
+ * `disabledEmails` is a deny list built from inactive report_recipients rows.
+ * Any email explicitly disabled there is excluded from ALL three sources, so
+ * toggling off an address stops delivery even if it is an admin email or in
+ * the REPORT_EMAIL env var.
  */
 export function mergeReportRecipients(
   adminEmails: (string | null | undefined)[],
   envValue: string | undefined,
   dbEmails: (string | null | undefined)[],
+  disabledEmails: (string | null | undefined)[] = [],
 ): string[] {
+  const denySet = new Set(
+    disabledEmails
+      .map((e) => e?.trim().toLowerCase())
+      .filter((e): e is string => Boolean(e)),
+  )
   return pickDeliverableEmails([
     ...adminEmails,
     ...parseRecipientList(envValue),
     ...dbEmails,
-  ])
+  ]).filter((email) => !denySet.has(email))
 }
 
 /**
@@ -92,10 +104,11 @@ export async function getReportRecipients(): Promise<string[]> {
 
   const { data: dbRows, error: dbError } = await service
     .from('report_recipients')
-    .select('email')
-    .eq('active', true)
+    .select('email, active')
   if (dbError) throw new Error(dbError.message)
-  const dbEmails = (dbRows ?? []).map((r) => r.email)
 
-  return mergeReportRecipients(adminEmails, process.env.REPORT_EMAIL, dbEmails)
+  const dbEmails = (dbRows ?? []).filter((r) => r.active).map((r) => r.email)
+  const disabledEmails = (dbRows ?? []).filter((r) => !r.active).map((r) => r.email)
+
+  return mergeReportRecipients(adminEmails, process.env.REPORT_EMAIL, dbEmails, disabledEmails)
 }
