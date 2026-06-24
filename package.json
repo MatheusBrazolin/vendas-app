@@ -18,7 +18,7 @@
     "e2e:report": "playwright show-report",
     "pwa:icons": "node scripts/generate-pwa-icons.mjs",
     "desktop": "electron .",
-    "desktop:build": "next build && electron-builder --win",
+    "desktop:build": "next build && node scripts/copy-standalone.mjs && electron-builder --win",
     "desktop:rebuild-sqlite": "npx electron-rebuild -f -w better-sqlite3"
   },
   "dependencies": {
@@ -80,16 +80,8 @@
     "artifactName": "NexSales-Instalador.${ext}",
     "files": [
       "electron/**/*",
-      ".next/**/*",
-      "!.next/dev/**/*",
-      "!.next/cache/**/*",
-      "!.next/turbopack/**/*",
-      "public/**/*",
-      "package.json",
-      "next.config.ts",
-      "tsconfig.json",
-      "node_modules/**/*",
-      "!node_modules/.cache/**/*"
+      ".next/standalone/**/*",
+      "package.json"
     ],
     "asar": false,
     "win": {
