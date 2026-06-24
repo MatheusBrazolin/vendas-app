@@ -27,7 +27,14 @@ function getStockStatus(stock: number, min: number): StockStatus {
   return 'ok'
 }
 
-function StockBadge({ status, quantity, min }: { status: StockStatus; quantity: number; min: number }) {
+function StockBadge({ status, quantity, min, tracked }: { status: StockStatus; quantity: number; min: number; tracked: boolean }) {
+  if (!tracked) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 ring-1 ring-inset ring-slate-200 dark:ring-slate-600/40">
+        Livre
+      </span>
+    )
+  }
   const styles: Record<StockStatus, string> = {
     out: 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 ring-1 ring-inset ring-red-600/15 dark:ring-red-500/20',
     low: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-1 ring-inset ring-amber-600/20 dark:ring-amber-500/20',
@@ -293,6 +300,7 @@ export default async function ProdutosPage({
                           status={status}
                           quantity={product.stock_quantity}
                           min={product.min_stock}
+                          tracked={product.track_stock ?? true}
                         />
                       </TableCell>
                       <TableCell>
