@@ -1,5 +1,5 @@
 import 'server-only'
-import { createClient } from '@/lib/supabase/server'
+import { createSyncClient } from '@/lib/supabase/server'
 import { getDb, type NxDB } from './client'
 import type { Category, Product, Customer, Sale, SaleItem, DebtPayment } from '@/types/database'
 
@@ -12,7 +12,7 @@ export interface SyncResult {
 
 export async function runSync(): Promise<SyncResult> {
   try {
-    const supabase = await createClient()
+    const supabase = await createSyncClient()
 
     // Quick connectivity check — if Supabase is unreachable this will throw/return error.
     const { error: pingError } = await supabase.from('categories').select('id').limit(1)
@@ -34,7 +34,7 @@ export async function runSync(): Promise<SyncResult> {
 }
 
 async function pullFromSupabase(): Promise<void> {
-  const supabase = await createClient()
+  const supabase = await createSyncClient()
   const db: NxDB = getDb()
 
   // Fetch reference data + recent records in parallel
@@ -149,7 +149,7 @@ function _upsertDebtPayments(rows: DebtPayment[]): void {
  * Failures are swallowed — the periodic sync will pick up the data within 60s.
  */
 export async function pullSingleSale(saleId: string): Promise<void> {
-  const supabase = await createClient()
+  const supabase = await createSyncClient()
   const db = getDb()
 
   const [saleRes, itemsRes] = await Promise.all([
@@ -199,7 +199,7 @@ export async function deleteLocalSale(saleId: string): Promise<void> {
   // Refresh product stock from Supabase so the PDV shows correct availability.
   if (affectedProductIds.length > 0) {
     try {
-      const supabase = await createClient()
+      const supabase = await createSyncClient()
       const { data } = await supabase.from('products').select('*').in('id', affectedProductIds)
       if (data && data.length > 0) _upsertProducts(data as Product[])
     } catch {
@@ -212,7 +212,7 @@ export async function deleteLocalSale(saleId: string): Promise<void> {
 // Returns the number of events successfully pushed.
 async function pushPendingQueue(): Promise<number> {
   const db = getDb()
-  const supabase = await createClient()
+  const supabase = await createSyncClient()
 
   interface QueueRow {
     id: number
