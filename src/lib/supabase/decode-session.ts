@@ -108,11 +108,9 @@ export async function getUserFromOfflineCookie(request: NextRequest): Promise<Of
 
     const secret = process.env.OFFLINE_SESSION_SECRET
     if (!secret) {
-      // In dev without the secret configured, skip signature check and rely on expiry only.
-      const payload = JSON.parse(base64UrlToString(data))
-      if (!payload?.exp || payload.exp < Math.floor(Date.now() / 1000)) return null
-      if (!payload?.userId) return null
-      return { id: payload.userId, email: payload.email }
+      // Secret missing — refuse to trust an unverified cookie.
+      // Set OFFLINE_SESSION_SECRET in .env.local (dev) or Vercel env vars (prod).
+      return null
     }
 
     const enc = new TextEncoder()

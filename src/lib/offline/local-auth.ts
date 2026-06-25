@@ -12,8 +12,15 @@ import { scryptSync, timingSafeEqual, randomBytes } from 'crypto'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from 'fs'
 import { join, dirname } from 'path'
 
-const CREDS_FILE = join(process.cwd(), '.offline-credentials.json')
-const DEBUG_LOG = join(process.cwd(), '.offline-auth-debug.log')
+// In Electron, OFFLINE_CREDS_PATH is set to app.getPath('userData') so the file
+// lands in a writable directory even when the app is installed in Program Files.
+// In dev/web, falls back to cwd (project root).
+const CREDS_FILE = process.env.OFFLINE_CREDS_PATH
+  ? join(process.env.OFFLINE_CREDS_PATH, '.offline-credentials.json')
+  : join(process.cwd(), '.offline-credentials.json')
+const DEBUG_LOG = process.env.OFFLINE_CREDS_PATH
+  ? join(process.env.OFFLINE_CREDS_PATH, '.offline-auth-debug.log')
+  : join(process.cwd(), '.offline-auth-debug.log')
 const KEY_LEN = 64
 
 function debugLog(msg: string): void {

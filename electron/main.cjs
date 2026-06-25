@@ -103,6 +103,7 @@ async function startNextServer() {
       ...process.env,
       ELECTRON_APP: 'true',
       DB_PATH: dbPath,
+      OFFLINE_CREDS_PATH: app.getPath('userData'),
       PORT: String(NEXT_PORT),
       HOSTNAME: '127.0.0.1',
       OFFLINE_SESSION_SECRET: getOrCreateOfflineSecret(app.getPath('userData')),

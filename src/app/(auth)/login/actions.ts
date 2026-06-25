@@ -95,7 +95,7 @@ export async function signIn(usernameOrEmail: string, password: string) {
       }
 
       if (diagError) {
-        return { error: `[DIAG] ${diagError}`, offline: true }
+        console.error('[offline-auth diag]', diagError)
       }
 
       return {
