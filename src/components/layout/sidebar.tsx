@@ -61,7 +61,7 @@ const navSections: NavSection[] = [
       { href: '/configuracoes/usuarios', label: 'Usuários', icon: Users, adminOnly: true },
       { href: '/relatorios', label: 'Relatório de lucro', icon: BarChart3, adminOnly: true },
       { href: '/configuracoes/relatorio', label: 'Relatório por email', icon: Mail, adminOnly: true },
-      { href: '/configuracoes/baixar', label: 'Baixar app', icon: MonitorDown, adminOnly: true, desktopOnly: true },
+      { href: '/configuracoes/baixar', label: 'Baixar app', icon: MonitorDown, desktopOnly: true },
     ],
   },
 ]

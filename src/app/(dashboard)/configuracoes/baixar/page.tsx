@@ -1,9 +1,9 @@
 import { MonitorDown } from 'lucide-react'
-import { requireAdmin } from '@/lib/auth/roles'
+import { requireAuth } from '@/lib/auth/roles'
 import { DownloadApp, DownloadInfo } from './download-app'
 
 export default async function BaixarAppPage() {
-  await requireAdmin()
+  await requireAuth()
 
   return (
     <div className="max-w-3xl space-y-6">

@@ -142,6 +142,15 @@ export async function isAdmin(): Promise<boolean> {
 }
 
 /**
+ * Server-side guard for authenticated pages. Redirects unauthenticated users to /login.
+ */
+export async function requireAuth(): Promise<CurrentUser> {
+  const user = await getCurrentUser()
+  if (!user) redirect('/login')
+  return user
+}
+
+/**
  * Server-side guard for admin-only pages. Redirects non-admins to /vendas/nova
  * (their effective home) and unauthenticated users to /login.
  */
